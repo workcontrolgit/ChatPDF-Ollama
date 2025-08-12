@@ -1,9 +1,12 @@
 ﻿@page "/"
 @using System.ComponentModel
+@using Microsoft.Extensions.Options
+@using ChatPDF.Web.Configuration
 @inject IChatClient ChatClient
 @inject NavigationManager Nav
 @inject SemanticSearch Search
 @inject IWebHostEnvironment Environment
+@inject IOptions<ApplicationConfiguration> AppConfig
 @implements IDisposable
 
 <PageTitle>Chat</PageTitle>
@@ -112,7 +115,7 @@
 
     private void LoadAvailableDocuments()
     {
-        var dataPath = Path.Combine(Environment.WebRootPath, "Data");
+        var dataPath = Path.Combine(Environment.WebRootPath, AppConfig.Value.DataIngestion.PdfDirectory);
         if (Directory.Exists(dataPath))
         {
             availableDocuments = Directory.GetFiles(dataPath, "*.pdf")

@@ -1,7 +1,10 @@
 @using ChatPDF.Web.Services.Ingestion
+@using ChatPDF.Web.Configuration
+@using Microsoft.Extensions.Options
 @inject IJSRuntime JS
 @inject IWebHostEnvironment Environment
 @inject DataIngestor DataIngestor
+@inject IOptions<ApplicationConfiguration> AppConfig
 
 <div class="document-upload">
     <label for="file-upload" class="btn-default upload-button">
@@ -51,10 +54,11 @@
             return;
         }
 
-        // Validate file size (limit to 10MB)
-        if (file.Size > 10 * 1024 * 1024)
+        // Validate file size using configuration
+        var maxSizeBytes = AppConfig.Value.DataIngestion.MaxFileSizeMB * 1024 * 1024;
+        if (file.Size > maxSizeBytes)
         {
-            ShowMessage("File size must be less than 10MB.", false);
+            ShowMessage($"File size must be less than {AppConfig.Value.DataIngestion.MaxFileSizeMB}MB.", false);
             return;
         }
 
@@ -64,8 +68,8 @@
 
         try
         {
-            // Create the Data directory if it doesn't exist
-            var dataPath = Path.Combine(Environment.WebRootPath, "Data");
+            // Create the Data directory if it doesn't exist (using configuration)
+            var dataPath = Path.Combine(Environment.WebRootPath, AppConfig.Value.DataIngestion.PdfDirectory);
             Directory.CreateDirectory(dataPath);
 
             // Generate unique filename to avoid conflicts
@@ -74,8 +78,8 @@
             var uniqueFileName = $"{fileName}_{DateTime.Now:yyyyMMdd_HHmmss}{extension}";
             var filePath = Path.Combine(dataPath, uniqueFileName);
 
-            // Save the file
-            using (var stream = file.OpenReadStream(maxAllowedSize: 10 * 1024 * 1024))
+            // Save the file (using configuration for max size)
+            using (var stream = file.OpenReadStream(maxAllowedSize: maxSizeBytes))
             using (var fileStream = new FileStream(filePath, FileMode.Create))
             {
                 await stream.CopyToAsync(fileStream);

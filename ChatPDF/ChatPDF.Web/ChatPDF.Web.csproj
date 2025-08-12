@@ -19,7 +19,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\ChatApp1.ServiceDefaults\ChatPDF.ServiceDefaults.csproj" />
+    <ProjectReference Include="..\ChatPDF.ServiceDefaults\ChatPDF.ServiceDefaults.csproj" />
   </ItemGroup>
 
 </Project>
