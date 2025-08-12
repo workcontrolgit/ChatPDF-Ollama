@@ -7,6 +7,7 @@
 @inject SemanticSearch Search
 @inject IWebHostEnvironment Environment
 @inject IOptions<ApplicationConfiguration> AppConfig
+@inject DocumentService DocumentService
 @implements IDisposable
 
 <PageTitle>Chat</PageTitle>
@@ -15,10 +16,14 @@
 
 <ChatMessageList Messages="@messages" InProgressMessage="@currentResponseMessage">
     <NoMessagesContent>
-        <div>To get started, try asking about these documents:</div>
-        @foreach (var file in availableDocuments)
+        @if (availableDocuments.Any())
         {
-            <ChatCitation File="@file"/>
+            <div>To get started, try asking about these documents:</div>
+            <DocumentList Documents="@availableDocuments" OnDocumentDeleted="@OnDocumentDeletedAsync" />
+        }
+        else
+        {
+            <div>No documents available. Upload a PDF to get started.</div>
         }
     </NoMessagesContent>
 </ChatMessageList>
@@ -113,17 +118,16 @@
         await InvokeAsync(StateHasChanged);
     }
 
+    private async Task OnDocumentDeletedAsync()
+    {
+        // Refresh the document list and UI to reflect document deletion
+        LoadAvailableDocuments();
+        await InvokeAsync(StateHasChanged);
+    }
+
     private void LoadAvailableDocuments()
     {
-        var dataPath = Path.Combine(Environment.WebRootPath, AppConfig.Value.DataIngestion.PdfDirectory);
-        if (Directory.Exists(dataPath))
-        {
-            availableDocuments = Directory.GetFiles(dataPath, "*.pdf")
-                .Select(Path.GetFileName)
-                .Where(name => !string.IsNullOrEmpty(name))
-                .OrderBy(name => name)
-                .ToList()!;
-        }
+        availableDocuments = DocumentService.GetAvailableDocuments();
     }
 
     [Description("Searches for information using a phrase or keyword")]

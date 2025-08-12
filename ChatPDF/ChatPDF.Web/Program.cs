@@ -35,6 +35,7 @@ builder.AddQdrantClient("vectordb");
 builder.Services.AddQdrantCollection<Guid, IngestedChunk>(appConfig.VectorDatabase.ChunksCollectionName);
 builder.Services.AddQdrantCollection<Guid, IngestedDocument>(appConfig.VectorDatabase.DocumentsCollectionName);
 builder.Services.AddScoped<DataIngestor>();
+builder.Services.AddScoped<DocumentService>();
 builder.Services.AddSingleton<SemanticSearch>();
 
 // Register configuration objects for dependency injection
