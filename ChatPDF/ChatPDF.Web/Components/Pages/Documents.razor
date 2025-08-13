@@ -122,8 +122,8 @@
         else
         {
             <!-- Documents Table -->
-            <div class="overflow-hidden">
-                <table class="min-w-full divide-y divide-gray-200">
+            <div style="overflow: hidden; width: 100%;">
+                <table style="width: 100%; border-collapse: collapse;">
                     <thead style="background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%); border-bottom: 2px solid #e2e8f0;">
                         <tr>
                             <th style="padding: 20px 24px; text-align: left; font-size: 12px; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: 0.05em; width: 60px;">
@@ -132,13 +132,13 @@
                                        @onchange="ToggleSelectAll" 
                                        checked="@allSelected" />
                             </th>
-                            <th style="padding: 20px 24px; text-align: left; font-size: 12px; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: 0.05em;">
+                            <th style="padding: 20px 24px; text-align: left; font-size: 12px; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: 0.05em; width: auto;">
                                 Document Name
                             </th>
-                            <th style="padding: 20px 24px; text-align: left; font-size: 12px; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: 0.05em;">
+                            <th style="padding: 20px 24px; text-align: left; font-size: 12px; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: 0.05em; width: 120px;">
                                 Size
                             </th>
-                            <th style="padding: 20px 24px; text-align: left; font-size: 12px; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: 0.05em;">
+                            <th style="padding: 20px 24px; text-align: left; font-size: 12px; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: 0.05em; width: 200px;">
                                 Last Modified
                             </th>
                         </tr>
@@ -153,15 +153,15 @@
                                            @onchange="(e) => ToggleDocumentSelection(doc.Name, (bool)e.Value!)" 
                                            checked="@selectedDocuments.Contains(doc.Name)" />
                                 </td>
-                                <td style="padding: 20px 24px; white-space: nowrap;">
+                                <td style="padding: 20px 24px; word-wrap: break-word; overflow-wrap: break-word;">
                                     <a href="@GetDocumentUrl(doc.Name)" target="_blank" style="font-weight: 600; color: #667eea; font-size: 16px; text-decoration: none; cursor: pointer; transition: color 0.2s ease;" onmouseover="this.style.color='#4f46e5'" onmouseout="this.style.color='#667eea'" title="Click to open PDF">
                                         @doc.Name
                                     </a>
                                 </td>
-                                <td style="padding: 20px 24px; white-space: nowrap; font-size: 14px; color: #64748b; font-weight: 500;">
+                                <td style="padding: 20px 24px; white-space: nowrap; font-size: 14px; color: #64748b; font-weight: 500; width: 120px;">
                                     @FormatFileSize(doc.Size)
                                 </td>
-                                <td style="padding: 20px 24px; white-space: nowrap; font-size: 14px; color: #64748b; font-weight: 500;">
+                                <td style="padding: 20px 24px; white-space: nowrap; font-size: 14px; color: #64748b; font-weight: 500; width: 200px;">
                                     @doc.LastModified.ToString("MMM dd, yyyy 'at' HH:mm")
                                 </td>
                             </tr>

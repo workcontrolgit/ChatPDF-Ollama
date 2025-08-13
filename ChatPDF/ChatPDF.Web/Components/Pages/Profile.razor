@@ -1,0 +1,259 @@
+@page "/profile"
+@using Microsoft.AspNetCore.Components.Authorization
+@using System.Security.Claims
+@using ChatPDF.Web.Services
+@inject AuthenticationStateProvider AuthenticationStateProvider
+@inject ChatHistoryService ChatHistoryService
+@inject IJSRuntime JS
+
+<PageTitle>Profile - ChatPDF</PageTitle>
+
+<div class="max-w-4xl mx-auto px-4" style="padding-top: 32px;">
+    <!-- Header -->
+    <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 24px; padding: 40px; margin-bottom: 32px; box-shadow: 0 20px 40px rgba(102, 126, 234, 0.15);">
+        <div style="display: flex; align-items: center; gap: 24px;">
+            <div style="width: 80px; height: 80px; border-radius: 50%; background: rgba(255, 255, 255, 0.2); display: flex; align-items: center; justify-content: center; backdrop-filter: blur(10px);">
+                <span style="color: white; font-size: 32px; font-weight: 700;">
+                    @GetUserInitials()
+                </span>
+            </div>
+            <div>
+                <h1 style="font-size: 36px; font-weight: 800; color: white; margin-bottom: 8px; text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);">
+                    @GetDisplayName()
+                </h1>
+                <p style="color: rgba(255, 255, 255, 0.9); font-size: 18px; line-height: 1.6; margin: 0;">
+                    @GetUserEmail()
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px;">
+        
+        <!-- User Information Card -->
+        <div style="background: white; border-radius: 20px; box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08); border: 1px solid rgba(255, 255, 255, 0.2); padding: 24px; backdrop-filter: blur(10px);">
+            <h2 style="font-size: 24px; font-weight: 700; color: #111827; margin-bottom: 24px; display: flex; align-items: center; gap: 12px;">
+                <svg style="width: 24px; height: 24px; color: #667eea;" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                </svg>
+                User Information
+            </h2>
+            
+            <div style="display: flex; flex-direction: column; gap: 16px;">
+                <div>
+                    <label style="color: #6b7280; font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 4px; display: block;">Display Name</label>
+                    <div style="color: #111827; font-size: 16px; font-weight: 500; padding: 8px 12px; background: #f9fafb; border-radius: 8px;">
+                        @GetDisplayName()
+                    </div>
+                </div>
+                
+                @if (!string.IsNullOrEmpty(GetUserEmail()))
+                {
+                    <div>
+                        <label style="color: #6b7280; font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 4px; display: block;">Email Address</label>
+                        <div style="color: #111827; font-size: 16px; font-weight: 500; padding: 8px 12px; background: #f9fafb; border-radius: 8px;">
+                            @GetUserEmail()
+                        </div>
+                    </div>
+                }
+                
+                <div>
+                    <label style="color: #6b7280; font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 4px; display: block;">User ID</label>
+                    <div style="color: #111827; font-size: 14px; font-family: monospace; padding: 8px 12px; background: #f9fafb; border-radius: 8px; word-break: break-all;">
+                        @currentUserId
+                    </div>
+                </div>
+                
+                <div>
+                    <label style="color: #6b7280; font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 4px; display: block;">Authentication Status</label>
+                    <div style="display: flex; align-items: center; gap: 8px; padding: 8px 12px; background: #f0fdf4; border-radius: 8px;">
+                        <div style="width: 8px; height: 8px; background: #10b981; border-radius: 50%;"></div>
+                        <span style="color: #065f46; font-size: 14px; font-weight: 600;">Authenticated</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Activity Summary Card -->
+        <div style="background: white; border-radius: 20px; box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08); border: 1px solid rgba(255, 255, 255, 0.2); padding: 24px; backdrop-filter: blur(10px);">
+            <h2 style="font-size: 24px; font-weight: 700; color: #111827; margin-bottom: 24px; display: flex; align-items: center; gap: 12px;">
+                <svg style="width: 24px; height: 24px; color: #667eea;" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v4a2 2 0 01-2 2h-2a2 2 0 00-2-2z" />
+                </svg>
+                Activity Summary
+            </h2>
+            
+            <div style="display: flex; flex-direction: column; gap: 16px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; padding: 12px 16px; background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%); border-radius: 12px;">
+                    <div style="display: flex; align-items: center; gap: 12px;">
+                        <div style="width: 40px; height: 40px; background: #2563eb; border-radius: 12px; display: flex; align-items: center; justify-content: center;">
+                            <svg style="width: 20px; height: 20px; color: white;" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                        </div>
+                        <span style="color: #1e40af; font-size: 16px; font-weight: 600;">Chat Sessions</span>
+                    </div>
+                    <span style="color: #1e40af; font-size: 24px; font-weight: 700;">@chatCount</span>
+                </div>
+                
+                <div style="padding: 16px; background: #f9fafb; border-radius: 12px; text-align: center;">
+                    <p style="color: #6b7280; font-size: 14px; margin: 0;">
+                        <a href="/chat-history" style="color: #667eea; text-decoration: none; font-weight: 600;">View your chat history</a>
+                        to see all conversations and continue where you left off.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- OIDC Claims Information -->
+    <div style="background: white; border-radius: 20px; box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08); border: 1px solid rgba(255, 255, 255, 0.2); padding: 24px; margin-top: 24px; backdrop-filter: blur(10px);">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
+            <h2 style="font-size: 24px; font-weight: 700; color: #111827; margin: 0; display: flex; align-items: center; gap: 12px;">
+                <svg style="width: 24px; height: 24px; color: #667eea;" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                </svg>
+                OIDC Authentication Claims
+            </h2>
+            <button @onclick="CopyClaimsToClipboard" 
+                    style="display: flex; align-items: center; gap: 8px; padding: 8px 16px; background: transparent; color: #667eea; border: 1px solid #667eea; border-radius: 8px; cursor: pointer; font-size: 14px; font-weight: 500; transition: all 0.2s ease;"
+                    onmouseover="this.style.backgroundColor='#f0f4ff'; this.style.borderColor='#4f46e5';"
+                    onmouseout="this.style.backgroundColor='transparent'; this.style.borderColor='#667eea';">
+                <svg style="width: 16px; height: 16px;" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                </svg>
+                Copy Claims
+            </button>
+        </div>
+
+        @if (userClaims.Any())
+        {
+            <div style="overflow: hidden; border-radius: 12px; border: 1px solid #e5e7eb;">
+                <table style="width: 100%; border-collapse: collapse;">
+                    <thead style="background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%); border-bottom: 2px solid #e2e8f0;">
+                        <tr>
+                            <th style="padding: 16px 20px; text-align: left; font-size: 12px; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: 0.05em; width: 30%;">Claim Type</th>
+                            <th style="padding: 16px 20px; text-align: left; font-size: 12px; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: 0.05em;">Value</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var claim in userClaims.OrderBy(c => c.Key))
+                        {
+                            <tr style="border-bottom: 1px solid #f1f5f9; transition: background-color 0.2s ease;" 
+                                onmouseover="this.style.backgroundColor='#f8fafc';" 
+                                onmouseout="this.style.backgroundColor='transparent';">
+                                <td style="padding: 16px 20px; font-size: 14px; font-weight: 600; color: #374151; font-family: monospace; vertical-align: top;">
+                                    @claim.Key
+                                </td>
+                                <td style="padding: 16px 20px; font-size: 14px; color: #6b7280; word-break: break-all; vertical-align: top;">
+                                    <code style="background: #f3f4f6; padding: 2px 6px; border-radius: 4px; font-size: 13px;">@claim.Value</code>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+        else
+        {
+            <div style="text-align: center; padding: 48px 32px;">
+                <div style="background: #fef3c7; border-radius: 24px; width: 80px; height: 80px; display: flex; align-items: center; justify-content: center; margin: 0 auto 24px;">
+                    <svg style="width: 40px; height: 40px; color: #d97706;" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
+                    </svg>
+                </div>
+                <h3 style="font-size: 20px; font-weight: 700; color: #111827; margin-bottom: 8px;">No Claims Available</h3>
+                <p style="color: #6b7280; font-size: 16px; margin: 0;">
+                    No OIDC claims were found for the current user session.
+                </p>
+            </div>
+        }
+    </div>
+</div>
+
+@code {
+    private Dictionary<string, string> userClaims = new();
+    private string currentUserId = "";
+    private int chatCount = 0;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadUserInformation();
+    }
+
+    private async Task LoadUserInformation()
+    {
+        try
+        {
+            // Get user claims
+            userClaims = await ChatHistoryService.GetUserClaimsAsync();
+            
+            // Get current user ID
+            currentUserId = await ChatHistoryService.GetCurrentUserIdAsync();
+            
+            // Get chat count
+            chatCount = await ChatHistoryService.GetUserChatCountAsync();
+        }
+        catch (Exception)
+        {
+            // Handle any errors silently - user will see empty state
+            userClaims = new Dictionary<string, string>();
+            currentUserId = "Error loading user information";
+            chatCount = 0;
+        }
+    }
+
+    private string GetDisplayName()
+    {
+        return userClaims.GetValueOrDefault("name", "") ??
+               userClaims.GetValueOrDefault("given_name", "") ??
+               userClaims.GetValueOrDefault("preferred_username", "") ??
+               userClaims.GetValueOrDefault("http://schemas.xmlsoap.org/ws/2005/05/identity/claims/name", "") ??
+               userClaims.GetValueOrDefault("sub", "") ??
+               "User";
+    }
+
+    private string GetUserEmail()
+    {
+        return userClaims.GetValueOrDefault("email", "") ??
+               userClaims.GetValueOrDefault("http://schemas.xmlsoap.org/ws/2005/05/identity/claims/emailaddress", "") ??
+               "";
+    }
+
+    private string GetUserInitials()
+    {
+        var displayName = GetDisplayName();
+        
+        if (string.IsNullOrEmpty(displayName) || displayName == "User")
+            return "U";
+        
+        var parts = displayName.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+        if (parts.Length >= 2)
+        {
+            return $"{parts[0][0]}{parts[1][0]}".ToUpper();
+        }
+        else if (parts.Length == 1 && parts[0].Length >= 2)
+        {
+            return parts[0].Substring(0, 2).ToUpper();
+        }
+        else
+        {
+            return displayName.Length > 0 ? displayName[0].ToString().ToUpper() : "U";
+        }
+    }
+
+    private async Task CopyClaimsToClipboard()
+    {
+        try
+        {
+            var claimsText = string.Join("\n", userClaims.Select(c => $"{c.Key}: {c.Value}"));
+            await JS.InvokeVoidAsync("navigator.clipboard.writeText", claimsText);
+            
+            // Could add a toast notification here
+        }
+        catch (Exception)
+        {
+            // Clipboard API might not be available - could fallback to showing claims in a modal
+        }
+    }
+}

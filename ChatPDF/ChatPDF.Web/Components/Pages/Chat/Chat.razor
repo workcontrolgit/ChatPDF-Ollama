@@ -3,6 +3,7 @@
 @using Microsoft.Extensions.Options
 @using ChatPDF.Web.Configuration
 @using ChatPDF.Web.Models
+@using ChatPDF.Web.Services.Ingestion
 @using Microsoft.AspNetCore.WebUtilities
 @inject IChatClient ChatClient
 @inject NavigationManager Nav
@@ -11,6 +12,8 @@
 @inject IOptions<ApplicationConfiguration> AppConfig
 @inject DocumentService DocumentService
 @inject ChatHistoryService ChatHistoryService
+@inject DataIngestor DataIngestor
+@inject IJSRuntime JS
 @implements IDisposable
 
 <PageTitle>Chat - ChatPDF</PageTitle>
@@ -66,8 +69,76 @@
         <div style="border-top: 1px solid #e5e7eb; padding: 24px; display: flex; flex-direction: column; gap: 16px; background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%); border-radius: 0 0 20px 20px;">
             <ChatSuggestions OnSelected="@AddUserMessageAsync" @ref="@chatSuggestions" />
             <ChatInput OnSend="@AddUserMessageAsync" @ref="@chatInput" />
+            
+            <!-- Action Buttons -->
+            <div style="display: flex; justify-content: center; gap: 16px; margin-top: 8px;">
+                <label style="display: flex; align-items: center; gap: 8px; padding: 10px 20px; background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: white; border-radius: 10px; font-weight: 500; font-size: 14px; cursor: pointer; transition: all 0.2s ease; box-shadow: 0 2px 8px rgba(16, 185, 129, 0.25);"
+                       onmouseover="this.style.transform='translateY(-1px)'; this.style.boxShadow='0 4px 12px rgba(16, 185, 129, 0.35)';"
+                       onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 2px 8px rgba(16, 185, 129, 0.25)';">
+                    <svg style="width: 16px; height: 16px;" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+                    </svg>
+                    Upload Document
+                    <InputFile OnChange="OnFileSelected" accept=".pdf" style="display: none;" />
+                </label>
+                
+                <button @onclick="ShowNewChatOptions"
+                        style="display: flex; align-items: center; gap: 8px; padding: 10px 20px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border: none; border-radius: 10px; font-weight: 500; font-size: 14px; cursor: pointer; transition: all 0.2s ease; box-shadow: 0 2px 8px rgba(102, 126, 234, 0.25);"
+                        onmouseover="this.style.transform='translateY(-1px)'; this.style.boxShadow='0 4px 12px rgba(102, 126, 234, 0.35)';"
+                        onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 2px 8px rgba(102, 126, 234, 0.25)';">
+                    <svg style="width: 16px; height: 16px;" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+                    </svg>
+                    New Chat
+                </button>
+            </div>
         </div>
     </div>
+
+    <!-- Upload Progress Indicator -->
+    @if (isUploading)
+    {
+        <div style="position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 1000; background: white; border-radius: 16px; padding: 32px; box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15); border: 1px solid rgba(255, 255, 255, 0.2); backdrop-filter: blur(10px);">
+            <div style="display: flex; align-items: center; gap: 16px;">
+                <svg style="width: 32px; height: 32px; color: #667eea; animation: spin 1s linear infinite;" fill="none" viewBox="0 0 24 24">
+                    <circle style="opacity: 0.25;" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                    <path style="opacity: 0.75;" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+                <div>
+                    <div style="font-weight: 600; color: #1e293b; font-size: 18px; margin-bottom: 4px;">Uploading Document</div>
+                    <div style="color: #64748b; font-size: 14px;">Processing and indexing your PDF...</div>
+                </div>
+            </div>
+        </div>
+        <div style="position: fixed; inset: 0; background: rgba(0, 0, 0, 0.3); z-index: 999; backdrop-filter: blur(2px);"></div>
+    }
+
+    <!-- Status Messages -->
+    @if (!string.IsNullOrEmpty(statusMessage))
+    {
+        <div style="position: fixed; bottom: 24px; right: 24px; z-index: 1100; animation: slideUp 0.3s ease-out;">
+            <div style="display: flex; align-items: center; gap: 12px; padding: 16px 20px; border-radius: 12px; box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12); backdrop-filter: blur(10px); border: 1px solid rgba(255, 255, 255, 0.2); @(statusSuccess ? "background: linear-gradient(135deg, #dcfce7 0%, #bbf7d0 100%); border-color: #86efac;" : "background: linear-gradient(135deg, #fef2f2 0%, #fecaca 100%); border-color: #fca5a5;")">
+                @if (statusSuccess)
+                {
+                    <div style="background: #059669; border-radius: 50%; padding: 4px; display: flex; align-items: center; justify-content: center;">
+                        <svg style="width: 16px; height: 16px; color: white;" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7" />
+                        </svg>
+                    </div>
+                    <span style="color: #065f46; font-weight: 600; font-size: 14px;">@statusMessage</span>
+                }
+                else
+                {
+                    <div style="background: #dc2626; border-radius: 50%; padding: 4px; display: flex; align-items: center; justify-content: center;">
+                        <svg style="width: 16px; height: 16px; color: white;" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                    </div>
+                    <span style="color: #991b1b; font-weight: 600; font-size: 14px;">@statusMessage</span>
+                }
+            </div>
+        </div>
+    }
 </div>
 
 @code {
@@ -96,6 +167,11 @@
     private List<string> availableDocuments = new();
     private ChatSession? currentSession;
     private Guid? sessionIdFromUrl;
+    
+    // Upload related variables
+    private bool isUploading = false;
+    private string statusMessage = "";
+    private bool statusSuccess = false;
 
     protected override async Task OnInitializedAsync()
     {
@@ -273,6 +349,84 @@
             $"<result filename=\"{result.DocumentId}\" page_number=\"{result.PageNumber}\">{result.Text}</result>");
     }
 
+    private async Task OnFileSelected(InputFileChangeEventArgs e)
+    {
+        var file = e.File;
+        if (file == null)
+            return;
+
+        // Validate file type
+        if (!file.Name.EndsWith(".pdf", StringComparison.OrdinalIgnoreCase))
+        {
+            ShowStatusMessage("Only PDF files are allowed.", false);
+            return;
+        }
+
+        // Validate file size using configuration
+        var maxSizeBytes = AppConfig.Value.DataIngestion.MaxFileSizeMB * 1024 * 1024;
+        if (file.Size > maxSizeBytes)
+        {
+            ShowStatusMessage($"File size must be less than {AppConfig.Value.DataIngestion.MaxFileSizeMB}MB.", false);
+            return;
+        }
+
+        isUploading = true;
+        StateHasChanged();
+
+        try
+        {
+            // Create the Data directory if it doesn't exist (using configuration)
+            var dataPath = Path.Combine(Environment.WebRootPath, AppConfig.Value.DataIngestion.PdfDirectory);
+            Directory.CreateDirectory(dataPath);
+
+            // Generate unique filename to avoid conflicts
+            var fileName = Path.GetFileNameWithoutExtension(file.Name);
+            var extension = Path.GetExtension(file.Name);
+            var uniqueFileName = $"{fileName}_{DateTime.Now:yyyyMMdd_HHmmss}{extension}";
+            var filePath = Path.Combine(dataPath, uniqueFileName);
+
+            // Save the file (using configuration for max size)
+            using (var stream = file.OpenReadStream(maxAllowedSize: maxSizeBytes))
+            using (var fileStream = new FileStream(filePath, FileMode.Create))
+            {
+                await stream.CopyToAsync(fileStream);
+            }
+
+            // Ingest the new document
+            var source = new PDFDirectorySource(dataPath);
+            await DataIngestor.IngestDataAsync(source);
+
+            // Refresh available documents list
+            LoadAvailableDocuments();
+
+            ShowStatusMessage($"'{file.Name}' uploaded and indexed successfully!", true);
+        }
+        catch (Exception ex)
+        {
+            ShowStatusMessage($"Upload failed: {ex.Message}", false);
+        }
+        finally
+        {
+            isUploading = false;
+            StateHasChanged();
+        }
+    }
+
+    private void ShowStatusMessage(string message, bool success)
+    {
+        statusMessage = message;
+        statusSuccess = success;
+        StateHasChanged();
+
+        _ = Task.Delay(5000).ContinueWith(_ =>
+        {
+            InvokeAsync(() =>
+            {
+                statusMessage = "";
+                StateHasChanged();
+            });
+        });
+    }
 
     public void Dispose()
         => currentResponseCancellation?.Cancel();
