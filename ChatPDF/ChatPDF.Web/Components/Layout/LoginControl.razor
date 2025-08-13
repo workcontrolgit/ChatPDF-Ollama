@@ -1,0 +1,153 @@
+@using Microsoft.AspNetCore.Components.Authorization
+@using System.Security.Claims
+@inject AuthenticationStateProvider AuthenticationStateProvider
+@inject NavigationManager Navigation
+
+<div style="position: relative; display: flex; align-items: center;">
+    <AuthorizeView>
+        <Authorized>
+            <!-- User Dropdown -->
+            <div style="position: relative;">
+                <button @onclick="ToggleDropdown" 
+                        style="display: flex; align-items: center; gap: 8px; padding: 8px 12px; background: #f3f4f6; border: 1px solid #e5e7eb; border-radius: 8px; cursor: pointer; transition: all 0.2s ease; outline: none;"
+                        onmouseover="this.style.backgroundColor='#e5e7eb'; this.style.borderColor='#d1d5db';"
+                        onmouseout="this.style.backgroundColor='#f3f4f6'; this.style.borderColor='#e5e7eb';">
+                    <svg style="width: 16px; height: 16px; color: #6b7280;" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                    </svg>
+                    <span style="color: #374151; font-size: 14px; font-weight: 500;">
+                        @GetDisplayName(context.User)
+                    </span>
+                    <svg style="width: 12px; height: 12px; color: #9ca3af; transition: transform 0.2s ease; @(isDropdownOpen ? "transform: rotate(180deg);" : "")" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                    </svg>
+                </button>
+
+                <!-- Dropdown Menu -->
+                @if (isDropdownOpen)
+                {
+                    <!-- Backdrop to close dropdown when clicking outside -->
+                    <div @onclick="CloseDropdown" 
+                         style="position: fixed; top: 0; left: 0; right: 0; bottom: 0; z-index: 40;"></div>
+                    
+                    <div @onclick:stopPropagation="true"
+                         style="position: absolute; top: 100%; right: 0; z-index: 50; margin-top: 4px; min-width: 180px; background: white; border: 1px solid #e5e7eb; border-radius: 12px; box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1); backdrop-filter: blur(10px); overflow: hidden;">
+                        
+                        <!-- User Info Header -->
+                        <div style="padding: 12px 16px; border-bottom: 1px solid #f3f4f6; background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);">
+                            <div style="display: flex; align-items: center; gap: 8px;">
+                                <div style="width: 32px; height: 32px; border-radius: 50%; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); display: flex; align-items: center; justify-content: center;">
+                                    <span style="color: white; font-size: 14px; font-weight: 600;">
+                                        @GetUserInitials(context.User)
+                                    </span>
+                                </div>
+                                <div>
+                                    <div style="color: #111827; font-size: 14px; font-weight: 600;">
+                                        @GetDisplayName(context.User)
+                                    </div>
+                                    <div style="color: #6b7280; font-size: 12px;">
+                                        @GetUserEmail(context.User)
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Menu Items -->
+                        <div style="padding: 4px;">
+                            <a href="/profile" 
+                               @onclick="CloseDropdown"
+                               style="display: flex; align-items: center; gap: 12px; padding: 10px 16px; color: #374151; text-decoration: none; border-radius: 8px; transition: all 0.2s ease; margin: 2px;"
+                               onmouseover="this.style.backgroundColor='#f3f4f6'; this.style.color='#111827';"
+                               onmouseout="this.style.backgroundColor='transparent'; this.style.color='#374151';">
+                                <svg style="width: 16px; height: 16px;" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                                </svg>
+                                <span style="font-size: 14px; font-weight: 500;">Profile</span>
+                            </a>
+                            
+                            <div style="height: 1px; background: #f3f4f6; margin: 4px 8px;"></div>
+                            
+                            <a href="/Account/Logout" 
+                               @onclick="CloseDropdown"
+                               style="display: flex; align-items: center; gap: 12px; padding: 10px 16px; color: #dc2626; text-decoration: none; border-radius: 8px; transition: all 0.2s ease; margin: 2px;"
+                               onmouseover="this.style.backgroundColor='#fef2f2'; this.style.color='#b91c1c';"
+                               onmouseout="this.style.backgroundColor='transparent'; this.style.color='#dc2626';">
+                                <svg style="width: 16px; height: 16px;" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                                </svg>
+                                <span style="font-size: 14px; font-weight: 500;">Sign Out</span>
+                            </a>
+                        </div>
+                    </div>
+                }
+            </div>
+        </Authorized>
+        <NotAuthorized>
+            <a href="/Account/Login" 
+               style="display: flex; align-items: center; gap: 8px; padding: 8px 16px; background: #2563eb; color: white; border: 1px solid #2563eb; border-radius: 8px; font-weight: 500; font-size: 14px; cursor: pointer; transition: all 0.2s ease; text-decoration: none;">
+                <svg style="width: 16px; height: 16px;" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013 3v1" />
+                </svg>
+                Login
+            </a>
+        </NotAuthorized>
+    </AuthorizeView>
+</div>
+
+@code {
+    private bool isDropdownOpen = false;
+
+    private void ToggleDropdown()
+    {
+        isDropdownOpen = !isDropdownOpen;
+    }
+
+    private void CloseDropdown()
+    {
+        isDropdownOpen = false;
+    }
+
+    private string GetDisplayName(ClaimsPrincipal user)
+    {
+        // Try to get the user's name from various claim types in order of preference
+        var displayName = user.FindFirst("name")?.Value ??
+                         user.FindFirst("given_name")?.Value ??
+                         user.FindFirst("preferred_username")?.Value ??
+                         user.FindFirst(ClaimTypes.Name)?.Value ??
+                         user.FindFirst("sub")?.Value ??
+                         user.Identity?.Name ??
+                         "User";
+        
+        return displayName;
+    }
+
+    private string GetUserEmail(ClaimsPrincipal user)
+    {
+        return user.FindFirst("email")?.Value ??
+               user.FindFirst(ClaimTypes.Email)?.Value ??
+               "";
+    }
+
+    private string GetUserInitials(ClaimsPrincipal user)
+    {
+        var displayName = GetDisplayName(user);
+        
+        if (string.IsNullOrEmpty(displayName) || displayName == "User")
+            return "U";
+        
+        var parts = displayName.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+        if (parts.Length >= 2)
+        {
+            return $"{parts[0][0]}{parts[1][0]}".ToUpper();
+        }
+        else if (parts.Length == 1 && parts[0].Length >= 2)
+        {
+            return parts[0].Substring(0, 2).ToUpper();
+        }
+        else
+        {
+            return displayName.Length > 0 ? displayName[0].ToString().ToUpper() : "U";
+        }
+    }
+
+}

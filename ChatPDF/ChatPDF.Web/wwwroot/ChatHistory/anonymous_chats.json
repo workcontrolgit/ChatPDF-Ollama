@@ -1,0 +1,156 @@
+[
+  {
+    "Id": "d7166fec-441d-4cad-8442-29af79425ddc",
+    "Title": "what time is it",
+    "UserId": "anonymous",
+    "CreatedAt": "2025-08-13T13:04:58.8562944Z",
+    "UpdatedAt": "2025-08-13T13:05:31.210748Z",
+    "IsDeleted": false,
+    "Messages": [
+      {
+        "AuthorName": null,
+        "CreatedAt": null,
+        "Role": "user",
+        "Contents": [
+          {
+            "$type": "text",
+            "Text": "what time is it",
+            "Annotations": null,
+            "AdditionalProperties": null
+          }
+        ],
+        "MessageId": null,
+        "AdditionalProperties": null
+      },
+      {
+        "AuthorName": null,
+        "CreatedAt": null,
+        "Role": "assistant",
+        "Contents": [
+          {
+            "$type": "functionCall",
+            "CallId": "bfaba543",
+            "Name": "Search",
+            "Arguments": {
+              "filenameFilter": "",
+              "searchPhrase": "current time"
+            },
+            "Annotations": null,
+            "AdditionalProperties": null
+          }
+        ],
+        "MessageId": null,
+        "AdditionalProperties": null
+      },
+      {
+        "AuthorName": null,
+        "CreatedAt": null,
+        "Role": "tool",
+        "Contents": [
+          {
+            "$type": "functionResult",
+            "CallId": "bfaba543",
+            "Result": [
+              "\u003Cresult filename=\u0022Example_GPS_Watch.pdf\u0022 page_number=\u00221\u0022\u003E(c) ExpeditionTech 1\n\nTrailMaster Watch GPS\u003C/result\u003E",
+              "\u003Cresult filename=\u0022Example_GPS_Watch.pdf\u0022 page_number=\u00227\u0022\u003E3.2: Initial Configuration\n\nOnce your TrailMaster GPS Watch is fully charged, you can proceed with the initial configuration by following these steps:\n\n1. Press and hold the power button located on the side of the watch to turn it on.\n\n2. Follow the on-screen instructions to select your language, set the date and time, and calibrate the GPS.\n\n3. Connect the watch to your smartphone using the TrailMaster companion app to enable real-time location sharing and receive notifications.\u003C/result\u003E",
+              "\u003Cresult filename=\u0022Example_GPS_Watch.pdf\u0022 page_number=\u002213\u0022\u003E7.2 CE Marking\n\nThe CE marking on the ExpeditionTech TrailMaster GPS Watch indicates that it complies with the essential requirements of the relevant European health, safety, and environmental protection legislation. The device is in conformity with the essential requirements and other relevant provisions of Directive 1999/5/EC. The CE marking is affixed to the device to demonstrate that it meets the essential requirements for safety, health, and environmental protection. The user should only use the device in accordance with the instructions provided in the user manual.\u003C/result\u003E",
+              "\u003Cresult filename=\u0022Example_GPS_Watch.pdf\u0022 page_number=\u00227\u0022\u003E4. Plug the other end of the cable into a power source, such as a computer or USB wall adapter.\n\n5. Allow the watch to charge for at least 2 hours, or until the battery indicator on the display shows it is fully charged.\n\nFor optimal performance, it is recommended to fully charge the device before each use and to avoid overcharging. Please refer to the TrailMaster GPS Watch technical specifications for detailed battery charging information.\u003C/result\u003E",
+              "\u003Cresult filename=\u0022Example_GPS_Watch.pdf\u0022 page_number=\u00225\u0022\u003E(c) ExpeditionTech\n\n5\n\n2. Technical Specifications\n\n2.1 Hardware\n\n2.1.1 Processor and Memory\n\nThe TrailMaster GPS Watch is equipped with a high-performance ARM Cortex processor, ensuring fast and efficient operation for all your outdoor activities. The device also comes with 4GB of internal memory, providing ample storage for maps, routes, and waypoints. The processor operates at 1.2GHz, allowing for quick map rendering and location updates.\u003C/result\u003E"
+            ],
+            "Annotations": null,
+            "AdditionalProperties": null
+          }
+        ],
+        "MessageId": null,
+        "AdditionalProperties": null
+      },
+      {
+        "AuthorName": null,
+        "CreatedAt": null,
+        "Role": "assistant",
+        "Contents": [
+          {
+            "$type": "text",
+            "Text": "The current time cannot be determined from the search results provided. However, the user manual suggests that the watch can be fully charged in at least 2 hours, or until the battery indicator shows it is fully charged.\r\n\r\n\u003Ccitation filename=\u0027Example_GPS_Watch.pdf\u0027 page_number=\u00277\u0027\u003E4. Plug the other end of the cable into a power source, such as a computer or USB wall adapter.\u003C/citation\u003E",
+            "Annotations": null,
+            "AdditionalProperties": null
+          }
+        ],
+        "MessageId": null,
+        "AdditionalProperties": null
+      },
+      {
+        "AuthorName": null,
+        "CreatedAt": null,
+        "Role": "user",
+        "Contents": [
+          {
+            "$type": "text",
+            "Text": "What\u0027s the next step?",
+            "Annotations": null,
+            "AdditionalProperties": null
+          }
+        ],
+        "MessageId": null,
+        "AdditionalProperties": null
+      },
+      {
+        "AuthorName": null,
+        "CreatedAt": null,
+        "Role": "assistant",
+        "Contents": [
+          {
+            "$type": "functionCall",
+            "CallId": "97c3f131",
+            "Name": "Search",
+            "Arguments": {
+              "filenameFilter": "",
+              "searchPhrase": "current time"
+            },
+            "Annotations": null,
+            "AdditionalProperties": null
+          }
+        ],
+        "MessageId": null,
+        "AdditionalProperties": null
+      },
+      {
+        "AuthorName": null,
+        "CreatedAt": null,
+        "Role": "tool",
+        "Contents": [
+          {
+            "$type": "functionResult",
+            "CallId": "97c3f131",
+            "Result": [
+              "\u003Cresult filename=\u0022Example_GPS_Watch.pdf\u0022 page_number=\u00221\u0022\u003E(c) ExpeditionTech 1\n\nTrailMaster Watch GPS\u003C/result\u003E",
+              "\u003Cresult filename=\u0022Example_GPS_Watch.pdf\u0022 page_number=\u00227\u0022\u003E3.2: Initial Configuration\n\nOnce your TrailMaster GPS Watch is fully charged, you can proceed with the initial configuration by following these steps:\n\n1. Press and hold the power button located on the side of the watch to turn it on.\n\n2. Follow the on-screen instructions to select your language, set the date and time, and calibrate the GPS.\n\n3. Connect the watch to your smartphone using the TrailMaster companion app to enable real-time location sharing and receive notifications.\u003C/result\u003E",
+              "\u003Cresult filename=\u0022Example_GPS_Watch.pdf\u0022 page_number=\u002213\u0022\u003E7.2 CE Marking\n\nThe CE marking on the ExpeditionTech TrailMaster GPS Watch indicates that it complies with the essential requirements of the relevant European health, safety, and environmental protection legislation. The device is in conformity with the essential requirements and other relevant provisions of Directive 1999/5/EC. The CE marking is affixed to the device to demonstrate that it meets the essential requirements for safety, health, and environmental protection. The user should only use the device in accordance with the instructions provided in the user manual.\u003C/result\u003E",
+              "\u003Cresult filename=\u0022Example_GPS_Watch.pdf\u0022 page_number=\u00227\u0022\u003E4. Plug the other end of the cable into a power source, such as a computer or USB wall adapter.\n\n5. Allow the watch to charge for at least 2 hours, or until the battery indicator on the display shows it is fully charged.\n\nFor optimal performance, it is recommended to fully charge the device before each use and to avoid overcharging. Please refer to the TrailMaster GPS Watch technical specifications for detailed battery charging information.\u003C/result\u003E",
+              "\u003Cresult filename=\u0022Example_GPS_Watch.pdf\u0022 page_number=\u00225\u0022\u003E(c) ExpeditionTech\n\n5\n\n2. Technical Specifications\n\n2.1 Hardware\n\n2.1.1 Processor and Memory\n\nThe TrailMaster GPS Watch is equipped with a high-performance ARM Cortex processor, ensuring fast and efficient operation for all your outdoor activities. The device also comes with 4GB of internal memory, providing ample storage for maps, routes, and waypoints. The processor operates at 1.2GHz, allowing for quick map rendering and location updates.\u003C/result\u003E"
+            ],
+            "Annotations": null,
+            "AdditionalProperties": null
+          }
+        ],
+        "MessageId": null,
+        "AdditionalProperties": null
+      },
+      {
+        "AuthorName": null,
+        "CreatedAt": null,
+        "Role": "assistant",
+        "Contents": [
+          {
+            "$type": "text",
+            "Text": "According to the user manual, the next step is to press and hold the power button located on the side of the watch to turn it on, then follow the on-screen instructions to select your language, set the date and time, and calibrate the GPS.\r\n\r\n\u003Ccitation filename=\u0027Example_GPS_Watch.pdf\u0027 page_number=\u00273.2\u0027\u003E3.2: Initial Configuration\u003C/citation\u003E",
+            "Annotations": null,
+            "AdditionalProperties": null
+          }
+        ],
+        "MessageId": null,
+        "AdditionalProperties": null
+      }
+    ]
+  }
+]
