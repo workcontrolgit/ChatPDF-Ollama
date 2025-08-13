@@ -1,7 +1,7 @@
-<div class="chat-header-container main-background-gradient">
-    <div class="chat-header-controls page-width">
-        <button class="btn-default" @onclick="@OnNewChat">
-            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="new-chat-icon">
+<div class="p-6 bg-gradient-to-r from-primary-50 to-blue-50 border-b border-gray-200">
+    <div class="flex items-center justify-between mb-4">
+        <button class="btn btn-secondary" @onclick="@OnNewChat">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4">
                 <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
             </svg>
             New chat
@@ -9,7 +9,12 @@
         <DocumentUpload OnDocumentUploaded="@OnDocumentUploaded" />
     </div>
 
-    <h1 class="page-width">ChatPDF</h1>
+    <div class="text-center">
+        <h1 class="text-3xl font-bold bg-gradient-to-r from-primary-600 to-blue-600 bg-clip-text text-transparent">
+            ChatPDF
+        </h1>
+        <p class="text-gray-600 mt-2">AI-powered document assistant</p>
+    </div>
 </div>
 
 @code {
