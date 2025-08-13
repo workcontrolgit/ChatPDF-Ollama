@@ -1,0 +1,149 @@
+@page "/diagnostics"
+@using ChatPDF.Web.Services
+@using ChatPDF.Web.Services.Ingestion
+@using Microsoft.Extensions.AI
+@inject SemanticSearch Search
+@inject DocumentService DocumentService
+@inject IEmbeddingGenerator<string, Embedding<float>> EmbeddingGenerator
+@inject IChatClient ChatClient
+
+<PageTitle>Diagnostics - ChatPDF</PageTitle>
+
+<div class="max-w-4xl mx-auto px-4" style="padding-top: 32px;">
+    <div style="background: white; border-radius: 20px; box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08); padding: 32px; margin-bottom: 24px;">
+        <h1 style="font-size: 28px; font-weight: 700; color: #1e293b; margin-bottom: 24px;">System Diagnostics</h1>
+        
+        <div style="display: flex; flex-direction: column; gap: 24px;">
+            
+            <!-- Test Buttons -->
+            <div style="display: flex; gap: 16px; flex-wrap: wrap;">
+                <button style="padding: 12px 20px; background: #667eea; color: white; border: none; border-radius: 8px; cursor: pointer;" @onclick="TestDocuments">
+                    Test Documents
+                </button>
+                <button style="padding: 12px 20px; background: #667eea; color: white; border: none; border-radius: 8px; cursor: pointer;" @onclick="TestEmbeddings">
+                    Test Embeddings
+                </button>
+                <button style="padding: 12px 20px; background: #667eea; color: white; border: none; border-radius: 8px; cursor: pointer;" @onclick="TestSearch">
+                    Test Search
+                </button>
+                <button style="padding: 12px 20px; background: #667eea; color: white; border: none; border-radius: 8px; cursor: pointer;" @onclick="TestChat">
+                    Test Chat
+                </button>
+            </div>
+
+            <!-- Results Area -->
+            <div style="background: #f8fafc; border-radius: 12px; padding: 20px; min-height: 200px;">
+                <h3 style="margin-bottom: 16px; color: #374151;">Results:</h3>
+                <pre style="white-space: pre-wrap; font-family: monospace; color: #4b5563;">@diagnosticResults</pre>
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    private string diagnosticResults = "Click a test button to run diagnostics...";
+
+    private void TestDocuments()
+    {
+        try
+        {
+            diagnosticResults = "Testing document availability...\n\n";
+            var documents = DocumentService.GetAvailableDocuments();
+            diagnosticResults += $"✅ Found {documents.Count} documents:\n";
+            foreach (var doc in documents)
+            {
+                diagnosticResults += $"  - {doc}\n";
+            }
+            
+            if (documents.Count == 0)
+            {
+                diagnosticResults += "\n❌ No documents found! Make sure PDFs are in wwwroot/Data/ folder.";
+            }
+        }
+        catch (Exception ex)
+        {
+            diagnosticResults = $"❌ Document test failed: {ex.Message}";
+        }
+        StateHasChanged();
+    }
+
+    private async Task TestEmbeddings()
+    {
+        try
+        {
+            diagnosticResults = "Testing embedding generation...\n\n";
+            var testText = "This is a test sentence for embedding generation.";
+            var embeddings = await EmbeddingGenerator.GenerateAsync(testText);
+            
+            if (embeddings?.Vector.Length > 0)
+            {
+                diagnosticResults += $"✅ Embedding generated successfully!\n";
+                diagnosticResults += $"   Vector dimension: {embeddings.Vector.Length}\n";
+                var vectorSpan = embeddings.Vector.Span;
+                var first5 = vectorSpan.Slice(0, Math.Min(5, vectorSpan.Length));
+                diagnosticResults += $"   First 5 values: [{string.Join(", ", first5.ToArray().Select(f => f.ToString("F4")))}...]\n";
+            }
+            else
+            {
+                diagnosticResults += "❌ Failed to generate embeddings - no vector returned.";
+            }
+        }
+        catch (Exception ex)
+        {
+            diagnosticResults = $"❌ Embedding test failed: {ex.Message}\n\nThis usually means:\n- Ollama is not running (localhost:11434)\n- nomic-embed-text model is not installed";
+        }
+        StateHasChanged();
+    }
+
+    private async Task TestSearch()
+    {
+        try
+        {
+            diagnosticResults = "Testing semantic search...\n\n";
+            var searchResults = await Search.SearchAsync("test document content", null, 3);
+            
+            diagnosticResults += $"✅ Search completed!\n";
+            diagnosticResults += $"   Found {searchResults.Count} results:\n\n";
+            
+            foreach (var result in searchResults)
+            {
+                diagnosticResults += $"📄 Document: {result.DocumentId}\n";
+                diagnosticResults += $"   Page: {result.PageNumber}\n";
+                diagnosticResults += $"   Text: {result.Text.Substring(0, Math.Min(100, result.Text.Length))}...\n\n";
+            }
+            
+            if (searchResults.Count == 0)
+            {
+                diagnosticResults += "❌ No search results found. This could mean:\n";
+                diagnosticResults += "- Vector database (Qdrant) is not running\n";
+                diagnosticResults += "- Documents haven't been ingested/embedded\n";
+                diagnosticResults += "- Search terms don't match any content";
+            }
+        }
+        catch (Exception ex)
+        {
+            diagnosticResults = $"❌ Search test failed: {ex.Message}\n\nThis usually means:\n- Qdrant vector database is not running (localhost:6333)\n- Collections haven't been created";
+        }
+        StateHasChanged();
+    }
+
+    private async Task TestChat()
+    {
+        try
+        {
+            diagnosticResults = "Testing chat client...\n\n";
+            var testMessage = new ChatMessage(ChatRole.User, "Hello, can you respond to this test message?");
+            var messages = new List<ChatMessage> { testMessage };
+            
+            var response = await ChatClient.GetResponseAsync(messages);
+            
+            diagnosticResults += $"✅ Chat client working!\n";
+            diagnosticResults += $"   Response: {response?.ToString() ?? "No response"}\n";
+        }
+        catch (Exception ex)
+        {
+            diagnosticResults = $"❌ Chat test failed: {ex.Message}\n\nThis usually means:\n- Ollama is not running (localhost:11434)\n- llama3.2 model is not installed";
+        }
+        StateHasChanged();
+    }
+}

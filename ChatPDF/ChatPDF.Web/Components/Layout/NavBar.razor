@@ -1,5 +1,6 @@
 @using ChatPDF.Web.Services
 @inject DocumentService DocumentService
+@implements IDisposable
 
 <!-- Simple Navigation Bar -->
 <nav style="background: white; border-bottom: 1px solid #e5e7eb; padding: 12px 16px;">
@@ -8,7 +9,7 @@
         <h1 style="margin: 0; font-size: 18px; font-weight: bold; color: #2563eb;">ChatPDF</h1>
         
         <!-- Navigation Links -->
-        <div style="display: flex; gap: 24px;">
+        <div style="display: flex; gap: 24px; align-items: center;">
             <NavLink href="/" style="text-decoration: none; padding: 8px 16px; color: #374151; font-weight: 500; display: flex; align-items: center; gap: 8px;" Match="NavLinkMatch.All">
                 <svg style="width: 16px; height: 16px;" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
@@ -27,15 +28,55 @@
                     </span>
                 }
             </NavLink>
+            
+            <div style="border-left: 1px solid #e5e7eb; padding-left: 24px; display: flex; gap: 12px; align-items: center;">
+                <a href="/" style="display: flex; align-items: center; gap: 6px; padding: 6px 12px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border: none; border-radius: 8px; font-weight: 500; font-size: 14px; cursor: pointer; transition: all 0.2s ease; text-decoration: none;">
+                    <svg style="width: 14px; height: 14px;" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+                    </svg>
+                    New Chat
+                </a>
+                <a href="/diagnostics" style="display: flex; align-items: center; gap: 6px; padding: 6px 12px; background: #f59e0b; color: white; border: none; border-radius: 8px; font-weight: 500; font-size: 14px; cursor: pointer; transition: all 0.2s ease; text-decoration: none;">
+                    <svg style="width: 14px; height: 14px;" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    Diagnostics
+                </a>
+            </div>
         </div>
     </div>
 </nav>
 
 @code {
     private int documentCount = 0;
+    private Timer? refreshTimer;
 
     protected override void OnInitialized()
     {
-        documentCount = DocumentService.GetAvailableDocuments().Count;
+        UpdateDocumentCount();
+        
+        // Set up a timer to refresh the count every 2 seconds
+        refreshTimer = new Timer(async _ =>
+        {
+            await InvokeAsync(() =>
+            {
+                UpdateDocumentCount();
+                StateHasChanged();
+            });
+        }, null, TimeSpan.FromSeconds(2), TimeSpan.FromSeconds(2));
+    }
+
+    private void UpdateDocumentCount()
+    {
+        var newCount = DocumentService.GetAvailableDocuments().Count;
+        if (newCount != documentCount)
+        {
+            documentCount = newCount;
+        }
+    }
+
+    public void Dispose()
+    {
+        refreshTimer?.Dispose();
     }
 }
