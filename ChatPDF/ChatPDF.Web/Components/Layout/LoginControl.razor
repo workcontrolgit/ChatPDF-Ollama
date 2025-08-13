@@ -1,0 +1,25 @@
+@using Microsoft.AspNetCore.Components.Authorization
+@inject AuthenticationStateProvider AuthenticationStateProvider
+@inject NavigationManager Navigation
+
+<div style="display: flex; align-items: center; gap: 12px;">
+    <AuthorizeView>
+        <Authorized>
+            <div style="display: flex; align-items: center; gap: 8px;">
+                <span style="color: #374151; font-size: 14px;">
+                    Welcome, @(context.User.Identity?.Name ?? "User")
+                </span>
+                <a href="/Account/Logout" 
+                   style="padding: 6px 12px; background: #dc2626; color: white; border: none; border-radius: 6px; font-weight: 500; font-size: 14px; cursor: pointer; transition: all 0.2s ease; text-decoration: none; display: inline-block;">
+                    Logout
+                </a>
+            </div>
+        </Authorized>
+        <NotAuthorized>
+            <a href="/Account/Login" 
+               style="padding: 6px 12px; background: #2563eb; color: white; border: none; border-radius: 6px; font-weight: 500; font-size: 14px; cursor: pointer; transition: all 0.2s ease; text-decoration: none; display: inline-block;">
+                Login
+            </a>
+        </NotAuthorized>
+    </AuthorizeView>
+</div>
