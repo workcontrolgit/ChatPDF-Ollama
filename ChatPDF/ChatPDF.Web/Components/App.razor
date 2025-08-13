@@ -12,7 +12,9 @@
 </head>
 
 <body>
-    <Routes @rendermode="@renderMode" />
+    <CascadingAuthenticationState>
+        <Routes @rendermode="@renderMode" />
+    </CascadingAuthenticationState>
     <script src="@Assets["app.js"]" type="module"></script>
     <script src="@Assets["_framework/blazor.web.js"]"></script>
 </body>
