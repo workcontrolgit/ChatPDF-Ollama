@@ -48,6 +48,7 @@ builder.Services.AddQdrantCollection<Guid, IngestedDocument>(appConfig.VectorDat
 builder.Services.AddScoped<DataIngestor>();
 builder.Services.AddScoped<DocumentService>();
 builder.Services.AddScoped<ChatHistoryService>();
+builder.Services.AddScoped<VectorDatabaseCleaner>();
 builder.Services.AddSingleton<SemanticSearch>();
 
 // Authentication configuration
@@ -134,13 +135,49 @@ app.MapGet("/Account/Logout", async (HttpContext context) =>
 app.MapRazorComponents<App>()
     .AddInteractiveServerRenderMode();
 
+// Development endpoints for database management
+if (app.Environment.IsDevelopment())
+{
+    app.MapGet("/dev/clear-document/{documentId}", async (string documentId, VectorDatabaseCleaner cleaner) =>
+    {
+        await cleaner.ClearDocumentAsync(documentId);
+        return Results.Ok($"Cleared document: {documentId}");
+    }).RequireAuthorization();
+
+    app.MapPost("/dev/clear-all-data", async (VectorDatabaseCleaner cleaner) =>
+    {
+        await cleaner.ClearAllDataAsync();
+        return Results.Ok("Cleared all vector database data");
+    }).RequireAuthorization();
+
+    app.MapPost("/dev/cleanup-duplicates", async (VectorDatabaseCleaner cleaner) =>
+    {
+        await cleaner.CleanupDuplicatesAsync();
+        return Results.Ok("Cleaned up duplicate documents");
+    }).RequireAuthorization();
+
+    app.MapPost("/dev/cleanup-duplicates/{sourceId}", async (string sourceId, VectorDatabaseCleaner cleaner) =>
+    {
+        await cleaner.CleanupDuplicatesAsync(sourceId);
+        return Results.Ok($"Cleaned up duplicate documents for source: {sourceId}");
+    }).RequireAuthorization();
+}
+
 // Configure data ingestion based on settings
 if (appConfig.DataIngestion.IngestOnStartup)
 {
     // Important: ensure that any content you ingest is trusted, as it may be reflected back
     // to users or could be a source of prompt injection risk.
+    
+    // Clean up any existing duplicates before ingestion
     var pdfPath = Path.Combine(builder.Environment.WebRootPath, appConfig.DataIngestion.PdfDirectory);
-    await DataIngestor.IngestDataAsync(app.Services, new PDFDirectorySource(pdfPath));
+    var pdfSource = new PDFDirectorySource(pdfPath);
+    
+    using var scope = app.Services.CreateScope();
+    var cleaner = scope.ServiceProvider.GetRequiredService<VectorDatabaseCleaner>();
+    await cleaner.CleanupDuplicatesAsync(pdfSource.SourceId);
+    
+    await DataIngestor.IngestDataAsync(app.Services, pdfSource);
 }
 
 app.Run();

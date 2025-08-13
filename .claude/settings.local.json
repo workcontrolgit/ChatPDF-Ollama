@@ -9,7 +9,8 @@
       "Bash(dotnet new:*)",
       "Bash(dotnet sln add:*)",
       "Bash(dotnet sln:*)",
-      "Bash(rm:*)"
+      "Bash(rm:*)",
+      "Bash(find:*)"
     ],
     "deny": [],
     "ask": []
