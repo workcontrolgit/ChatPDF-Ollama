@@ -1,25 +1,53 @@
 @using Microsoft.AspNetCore.Components.Authorization
+@using System.Security.Claims
 @inject AuthenticationStateProvider AuthenticationStateProvider
 @inject NavigationManager Navigation
 
 <div style="display: flex; align-items: center; gap: 12px;">
     <AuthorizeView>
         <Authorized>
-            <div style="display: flex; align-items: center; gap: 8px;">
-                <span style="color: #374151; font-size: 14px;">
-                    Welcome, @(context.User.Identity?.Name ?? "User")
-                </span>
+            <div style="display: flex; align-items: center; gap: 12px;">
+                <div style="display: flex; align-items: center; gap: 8px; padding: 8px 12px; background: #f3f4f6; border-radius: 8px;">
+                    <svg style="width: 16px; height: 16px; color: #6b7280;" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                    </svg>
+                    <span style="color: #374151; font-size: 14px; font-weight: 500;">
+                        @GetDisplayName(context.User)
+                    </span>
+                </div>
                 <a href="/Account/Logout" 
-                   style="padding: 6px 12px; background: #dc2626; color: white; border: none; border-radius: 6px; font-weight: 500; font-size: 14px; cursor: pointer; transition: all 0.2s ease; text-decoration: none; display: inline-block;">
+                   style="display: flex; align-items: center; gap: 8px; padding: 8px 16px; background: transparent; color: #dc2626; border: 1px solid #dc2626; border-radius: 8px; font-weight: 500; font-size: 14px; cursor: pointer; transition: all 0.2s ease; text-decoration: none;">
+                    <svg style="width: 16px; height: 16px;" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                    </svg>
                     Logout
                 </a>
             </div>
         </Authorized>
         <NotAuthorized>
             <a href="/Account/Login" 
-               style="padding: 6px 12px; background: #2563eb; color: white; border: none; border-radius: 6px; font-weight: 500; font-size: 14px; cursor: pointer; transition: all 0.2s ease; text-decoration: none; display: inline-block;">
+               style="display: flex; align-items: center; gap: 8px; padding: 8px 16px; background: #2563eb; color: white; border: 1px solid #2563eb; border-radius: 8px; font-weight: 500; font-size: 14px; cursor: pointer; transition: all 0.2s ease; text-decoration: none;">
+                <svg style="width: 16px; height: 16px;" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                </svg>
                 Login
             </a>
         </NotAuthorized>
     </AuthorizeView>
 </div>
+
+@code {
+    private string GetDisplayName(ClaimsPrincipal user)
+    {
+        // Try to get the user's name from various claim types in order of preference
+        var displayName = user.FindFirst("name")?.Value ??
+                         user.FindFirst("given_name")?.Value ??
+                         user.FindFirst("preferred_username")?.Value ??
+                         user.FindFirst(ClaimTypes.Name)?.Value ??
+                         user.FindFirst("sub")?.Value ??
+                         user.Identity?.Name ??
+                         "User";
+        
+        return displayName;
+    }
+}
