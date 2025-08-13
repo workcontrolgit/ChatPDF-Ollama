@@ -1,9 +1,17 @@
 ﻿@inherits LayoutComponentBase
 
-@Body
+<div class="min-h-screen bg-gradient-to-b from-gray-50 to-gray-100">
+    <!-- Navigation -->
+    <NavBar />
+    
+    <!-- Main Content -->
+    <main class="container mx-auto px-4 py-6">
+        @Body
+    </main>
+</div>
 
-<div id="blazor-error-ui" data-nosnippet>
+<div id="blazor-error-ui" data-nosnippet class="blazor-error-boundary">
     An unhandled error has occurred.
-    <a href="." class="reload">Reload</a>
-    <span class="dismiss">🗙</span>
+    <a href="." class="reload text-white underline ml-2">Reload</a>
+    <span class="dismiss cursor-pointer ml-2">🗙</span>
 </div>

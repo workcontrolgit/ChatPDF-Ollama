@@ -1,0 +1,140 @@
+@using ChatPDF.Web.Services
+@inject DocumentService DocumentService
+@inject IJSRuntime JS
+
+<div class="space-y-4">
+    <h3 class="text-lg font-semibold text-gray-800 mb-3">Available Documents</h3>
+    @if (documents.Any())
+    {
+        <div class="space-y-3">
+            @foreach (var document in documents)
+            {
+                <div class="document-item bg-white border border-gray-200 rounded-xl p-4 flex items-center justify-between hover:border-primary-300 hover:shadow-md transition-all duration-200 animate-fade-in">
+                    <div class="flex-1 min-w-0">
+                        <ChatCitation File="@document" />
+                    </div>
+                    <button class="ml-4 p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all duration-200 group" 
+                            @onclick="() => ConfirmDeleteAsync(document)" 
+                            title="Delete document">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5 group-hover:scale-110 transition-transform">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="m14.74 9-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 0 1-2.244 2.077H8.084a2.25 2.25 0 0 1-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 0 0-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 0 1 3.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 0 0-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 0 0-7.5 0" />
+                        </svg>
+                    </button>
+                </div>
+            }
+        </div>
+    }
+    else
+    {
+        <div class="text-center py-8">
+            <svg class="mx-auto h-12 w-12 text-gray-400 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+            </svg>
+            <p class="text-gray-500 text-sm">No documents available. Upload a PDF to get started.</p>
+        </div>
+    }
+    
+    @if (isDeleting)
+    {
+        <div class="flex items-center gap-3 p-4 bg-blue-50 border border-blue-200 rounded-lg animate-slide-down">
+            <svg class="w-5 h-5 text-blue-600 animate-spin" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+            </svg>
+            <span class="text-blue-700 font-medium">Deleting document...</span>
+        </div>
+    }
+    else if (!string.IsNullOrEmpty(deleteMessage))
+    {
+        <div class="flex items-center gap-3 p-4 rounded-lg animate-slide-down @(deleteSuccess ? "bg-green-50 border border-green-200" : "bg-red-50 border border-red-200")">
+            @if (deleteSuccess)
+            {
+                <svg class="w-5 h-5 text-green-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                </svg>
+                <span class="text-green-700 font-medium">@deleteMessage</span>
+            }
+            else
+            {
+                <svg class="w-5 h-5 text-red-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                <span class="text-red-700 font-medium">@deleteMessage</span>
+            }
+        </div>
+    }
+</div>
+
+
+@code {
+    [Parameter] public List<string> Documents { get; set; } = new();
+    [Parameter] public EventCallback OnDocumentDeleted { get; set; }
+
+    private List<string> documents = new();
+    private bool isDeleting = false;
+    private string deleteMessage = "";
+    private bool deleteSuccess = false;
+
+    protected override void OnParametersSet()
+    {
+        documents = Documents ?? new();
+    }
+
+    private async Task ConfirmDeleteAsync(string fileName)
+    {
+        var confirmed = await JS.InvokeAsync<bool>("confirm", $"Are you sure you want to delete '{fileName}'? This action cannot be undone.");
+        
+        if (confirmed)
+        {
+            await DeleteDocumentAsync(fileName);
+        }
+    }
+
+    private async Task DeleteDocumentAsync(string fileName)
+    {
+        isDeleting = true;
+        deleteMessage = "";
+        StateHasChanged();
+
+        try
+        {
+            var success = await DocumentService.DeleteDocumentAsync(fileName);
+            
+            if (success)
+            {
+                ShowMessage($"'{fileName}' deleted successfully!", true);
+                await OnDocumentDeleted.InvokeAsync();
+            }
+            else
+            {
+                ShowMessage($"Failed to delete '{fileName}'. Please try again.", false);
+            }
+        }
+        catch (Exception ex)
+        {
+            ShowMessage($"Error deleting '{fileName}': {ex.Message}", false);
+        }
+        finally
+        {
+            isDeleting = false;
+            StateHasChanged();
+        }
+    }
+
+    private void ShowMessage(string message, bool success)
+    {
+        deleteMessage = message;
+        deleteSuccess = success;
+        StateHasChanged();
+
+        // Clear message after 5 seconds
+        _ = Task.Delay(5000).ContinueWith(_ =>
+        {
+            InvokeAsync(() =>
+            {
+                deleteMessage = "";
+                StateHasChanged();
+            });
+        });
+    }
+}

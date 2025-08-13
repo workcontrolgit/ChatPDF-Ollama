@@ -7,26 +7,64 @@
 @inject SemanticSearch Search
 @inject IWebHostEnvironment Environment
 @inject IOptions<ApplicationConfiguration> AppConfig
+@inject DocumentService DocumentService
 @implements IDisposable
 
-<PageTitle>Chat</PageTitle>
+<PageTitle>Chat - ChatPDF</PageTitle>
 
-<ChatHeader OnNewChat="@ResetConversationAsync" OnDocumentUploaded="@OnDocumentUploadedAsync" />
+<div class="max-w-5xl mx-auto px-4">
+    <!-- Main Chat Area -->
+    <div style="background: white; border-radius: 20px; box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1); border: 1px solid rgba(255, 255, 255, 0.2); min-height: 700px; display: flex; flex-direction: column; backdrop-filter: blur(10px);">
+        <ChatMessageList Messages="@messages" InProgressMessage="@currentResponseMessage">
+            <NoMessagesContent>
+                <div style="flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 48px 32px; text-align: center;">
+                    @if (availableDocuments.Any())
+                    {
+                        <div style="max-width: 600px; display: flex; flex-direction: column; gap: 32px;">
+                            <div style="text-align: center;">
+                                <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 24px; width: 80px; height: 80px; display: flex; align-items: center; justify-content: center; margin: 0 auto 24px;">
+                                    <svg style="width: 40px; height: 40px; color: white;" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                                    </svg>
+                                </div>
+                                <h2 style="font-size: 32px; font-weight: 700; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; margin-bottom: 16px;">Ready to chat!</h2>
+                                <p style="color: #6b7280; font-size: 18px; line-height: 1.6; margin-bottom: 24px;">
+                                    You have <span style="font-weight: 600; color: #667eea;">@availableDocuments.Count</span> document@(availableDocuments.Count == 1 ? "" : "s") ready. 
+                                    Ask me anything about your PDFs and I'll help you find the answers.
+                                </p>
+                            </div>
+                        </div>
+                    }
+                    else
+                    {
+                        <div style="max-width: 500px; display: flex; flex-direction: column; gap: 32px;">
+                            <div style="text-align: center;">
+                                <div style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); border-radius: 24px; width: 80px; height: 80px; display: flex; align-items: center; justify-content: center; margin: 0 auto 24px;">
+                                    <svg style="width: 40px; height: 40px; color: white;" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                    </svg>
+                                </div>
+                                <h2 style="font-size: 32px; font-weight: 700; background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; margin-bottom: 16px;">Welcome to ChatPDF</h2>
+                                <p style="color: #6b7280; font-size: 18px; line-height: 1.6; margin-bottom: 32px;">Upload PDF documents and start having intelligent conversations with your files using AI.</p>
+                                <a href="/documents" style="display: inline-flex; align-items: center; gap: 8px; padding: 16px 24px; background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); color: white; text-decoration: none; border-radius: 12px; font-weight: 600; box-shadow: 0 4px 12px rgba(240, 147, 251, 0.25); transition: all 0.2s ease;">
+                                    <svg style="width: 20px; height: 20px;" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+                                    </svg>
+                                    Upload Your First Document
+                                </a>
+                            </div>
+                        </div>
+                    }
+                </div>
+            </NoMessagesContent>
+        </ChatMessageList>
 
-<ChatMessageList Messages="@messages" InProgressMessage="@currentResponseMessage">
-    <NoMessagesContent>
-        <div>To get started, try asking about these documents:</div>
-        @foreach (var file in availableDocuments)
-        {
-            <ChatCitation File="@file"/>
-        }
-    </NoMessagesContent>
-</ChatMessageList>
-
-<div class="chat-container">
-    <ChatSuggestions OnSelected="@AddUserMessageAsync" @ref="@chatSuggestions" />
-    <ChatInput OnSend="@AddUserMessageAsync" @ref="@chatInput" />
-    <SurveyPrompt /> @* Remove this line to eliminate the template survey message *@
+        <!-- Chat Input Area -->
+        <div style="border-top: 1px solid #e5e7eb; padding: 24px; display: flex; flex-direction: column; gap: 16px; background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%); border-radius: 0 0 20px 20px;">
+            <ChatSuggestions OnSelected="@AddUserMessageAsync" @ref="@chatSuggestions" />
+            <ChatInput OnSend="@AddUserMessageAsync" @ref="@chatInput" />
+        </div>
+    </div>
 </div>
 
 @code {
@@ -106,24 +144,15 @@
         await chatInput!.FocusAsync();
     }
 
-    private async Task OnDocumentUploadedAsync()
+    private void ShowNewChatOptions()
     {
-        // Refresh the document list and UI to reflect new document availability
-        LoadAvailableDocuments();
-        await InvokeAsync(StateHasChanged);
+        // This could be enhanced to show recent chats or templates in the future
+        _ = ResetConversationAsync();
     }
 
     private void LoadAvailableDocuments()
     {
-        var dataPath = Path.Combine(Environment.WebRootPath, AppConfig.Value.DataIngestion.PdfDirectory);
-        if (Directory.Exists(dataPath))
-        {
-            availableDocuments = Directory.GetFiles(dataPath, "*.pdf")
-                .Select(Path.GetFileName)
-                .Where(name => !string.IsNullOrEmpty(name))
-                .OrderBy(name => name)
-                .ToList()!;
-        }
+        availableDocuments = DocumentService.GetAvailableDocuments();
     }
 
     [Description("Searches for information using a phrase or keyword")]
@@ -136,6 +165,7 @@
         return results.Select(result =>
             $"<result filename=\"{result.DocumentId}\" page_number=\"{result.PageNumber}\">{result.Text}</result>");
     }
+
 
     public void Dispose()
         => currentResponseCancellation?.Cancel();
