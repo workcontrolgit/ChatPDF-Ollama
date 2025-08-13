@@ -2,12 +2,15 @@
 @using System.ComponentModel
 @using Microsoft.Extensions.Options
 @using ChatPDF.Web.Configuration
+@using ChatPDF.Web.Models
+@using Microsoft.AspNetCore.WebUtilities
 @inject IChatClient ChatClient
 @inject NavigationManager Nav
 @inject SemanticSearch Search
 @inject IWebHostEnvironment Environment
 @inject IOptions<ApplicationConfiguration> AppConfig
 @inject DocumentService DocumentService
+@inject ChatHistoryService ChatHistoryService
 @implements IDisposable
 
 <PageTitle>Chat - ChatPDF</PageTitle>
@@ -91,22 +94,53 @@
     private ChatInput? chatInput;
     private ChatSuggestions? chatSuggestions;
     private List<string> availableDocuments = new();
+    private ChatSession? currentSession;
+    private Guid? sessionIdFromUrl;
 
-    protected override void OnInitialized()
+    protected override async Task OnInitializedAsync()
     {
         messages.Add(new(ChatRole.System, SystemPrompt));
         chatOptions.Tools = [AIFunctionFactory.Create(SearchAsync)];
         LoadAvailableDocuments();
+
+        // Check if we're loading an existing session from URL
+        var uri = new Uri(Nav.Uri);
+        var query = Microsoft.AspNetCore.WebUtilities.QueryHelpers.ParseQuery(uri.Query);
+        
+        if (query.TryGetValue("session", out var sessionIdStr) && Guid.TryParse(sessionIdStr, out var sessionId))
+        {
+            sessionIdFromUrl = sessionId;
+            await LoadChatSession(sessionId);
+        }
+        else if (query.TryGetValue("new", out _))
+        {
+            // Explicit new session requested - don't load any existing session
+            currentSession = null;
+        }
+        else
+        {
+            // Try to load the most recent session to persist across navigation
+            await LoadMostRecentSession();
+        }
     }
 
     private async Task AddUserMessageAsync(ChatMessage userMessage)
     {
         CancelAnyCurrentResponse();
 
+        // Create session on first message if it doesn't exist
+        if (currentSession == null)
+        {
+            currentSession = await ChatHistoryService.CreateChatSessionAsync();
+        }
+
         // Add the user message to the conversation
         messages.Add(userMessage);
         chatSuggestions?.Clear();
         await chatInput!.FocusAsync();
+
+        // Save user message to history
+        await ChatHistoryService.AddMessageToSessionAsync(currentSession.Id, userMessage);
 
         // Show loading indicator immediately
         currentResponseMessage = new ChatMessage(ChatRole.Assistant, "");
@@ -119,7 +153,17 @@
 
         // Clear loading indicator and store responses in the conversation
         currentResponseMessage = null;
+        var messageCountBefore = messages.Count;
         messages.AddMessages(response);
+        var messageCountAfter = messages.Count;
+        
+        // Save AI response to history - save the new messages that were added
+        if (currentSession != null && messageCountAfter > messageCountBefore)
+        {
+            var newMessages = messages.Skip(messageCountBefore).ToList();
+            await ChatHistoryService.AddMessagesToSessionAsync(currentSession.Id, newMessages);
+        }
+        
         chatSuggestions?.Update(messages);
     }
 
@@ -141,7 +185,70 @@
         messages.Clear();
         messages.Add(new(ChatRole.System, SystemPrompt));
         chatSuggestions?.Clear();
+        
+        // Clear current session - new session will be created when user sends first message
+        currentSession = null;
+        Nav.NavigateTo("/", forceLoad: false);
+        
         await chatInput!.FocusAsync();
+    }
+
+    private async Task LoadChatSession(Guid sessionId)
+    {
+        try
+        {
+            var session = await ChatHistoryService.GetChatSessionAsync(sessionId);
+            if (session != null)
+            {
+                currentSession = session;
+                messages.Clear();
+                messages.Add(new(ChatRole.System, SystemPrompt));
+                
+                // Load all messages except system messages
+                foreach (var msg in session.Messages.Where(m => m.Role != ChatRole.System))
+                {
+                    messages.Add(msg);
+                }
+                
+                StateHasChanged();
+            }
+        }
+        catch
+        {
+            // If loading fails, create a new session
+            currentSession = await ChatHistoryService.CreateChatSessionAsync();
+        }
+    }
+
+    private async Task LoadMostRecentSession()
+    {
+        try
+        {
+            var recentSession = await ChatHistoryService.GetMostRecentSessionAsync();
+            if (recentSession != null)
+            {
+                currentSession = recentSession;
+                messages.Clear();
+                messages.Add(new(ChatRole.System, SystemPrompt));
+                
+                // Load all messages except system messages
+                foreach (var msg in recentSession.Messages.Where(m => m.Role != ChatRole.System))
+                {
+                    messages.Add(msg);
+                }
+                
+                // Update URL to reflect current session without triggering navigation
+                var newUrl = $"/?session={recentSession.Id}";
+                Nav.NavigateTo(newUrl, replace: true);
+                
+                StateHasChanged();
+            }
+        }
+        catch
+        {
+            // If loading fails, stay in sessionless state until user sends first message
+            currentSession = null;
+        }
     }
 
     private void ShowNewChatOptions()

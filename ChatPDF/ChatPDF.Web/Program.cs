@@ -47,6 +47,7 @@ builder.Services.AddQdrantCollection<Guid, IngestedChunk>(appConfig.VectorDataba
 builder.Services.AddQdrantCollection<Guid, IngestedDocument>(appConfig.VectorDatabase.DocumentsCollectionName);
 builder.Services.AddScoped<DataIngestor>();
 builder.Services.AddScoped<DocumentService>();
+builder.Services.AddScoped<ChatHistoryService>();
 builder.Services.AddSingleton<SemanticSearch>();
 
 // Authentication configuration

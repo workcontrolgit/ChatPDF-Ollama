@@ -6,6 +6,7 @@
 @inject DocumentService DocumentService
 @inject IEmbeddingGenerator<string, Embedding<float>> EmbeddingGenerator
 @inject IChatClient ChatClient
+@inject ChatHistoryService ChatHistoryService
 
 <PageTitle>Diagnostics - ChatPDF</PageTitle>
 
@@ -28,6 +29,9 @@
                 </button>
                 <button style="padding: 12px 20px; background: #667eea; color: white; border: none; border-radius: 8px; cursor: pointer;" @onclick="TestChat">
                     Test Chat
+                </button>
+                <button style="padding: 12px 20px; background: #dc2626; color: white; border: none; border-radius: 8px; cursor: pointer;" @onclick="TestUserIsolation">
+                    Test User Isolation
                 </button>
             </div>
 
@@ -143,6 +147,66 @@
         catch (Exception ex)
         {
             diagnosticResults = $"❌ Chat test failed: {ex.Message}\n\nThis usually means:\n- Ollama is not running (localhost:11434)\n- llama3.2 model is not installed";
+        }
+        StateHasChanged();
+    }
+
+    private async Task TestUserIsolation()
+    {
+        try
+        {
+            diagnosticResults = "Testing user isolation and authentication...\n\n";
+            
+            // Test current user ID
+            var currentUserId = await ChatHistoryService.GetCurrentUserIdAsync();
+            diagnosticResults += $"✅ Current User ID: {currentUserId}\n\n";
+            
+            // Test user claims
+            var claims = await ChatHistoryService.GetUserClaimsAsync();
+            if (claims.Any())
+            {
+                diagnosticResults += "📋 User Claims:\n";
+                foreach (var claim in claims)
+                {
+                    diagnosticResults += $"   {claim.Key}: {claim.Value}\n";
+                }
+                diagnosticResults += "\n";
+            }
+            else
+            {
+                diagnosticResults += "⚠️  No user claims found - user is not authenticated\n\n";
+            }
+            
+            // Test chat sessions
+            var sessions = await ChatHistoryService.GetUserChatSessionsAsync();
+            diagnosticResults += $"📁 Chat Sessions for current user: {sessions.Count}\n";
+            
+            foreach (var session in sessions.Take(3))
+            {
+                diagnosticResults += $"   - {session.Title} (User: {session.UserId}, Messages: {session.Messages.Count})\n";
+            }
+            
+            if (sessions.Count > 3)
+            {
+                diagnosticResults += $"   ... and {sessions.Count - 3} more sessions\n";
+            }
+            
+            // Validate user isolation
+            if (currentUserId == "anonymous")
+            {
+                diagnosticResults += "\n⚠️  WARNING: User is identified as 'anonymous'\n";
+                diagnosticResults += "   This means chat history will not be properly isolated between users!\n";
+                diagnosticResults += "   Check your authentication configuration.\n";
+            }
+            else
+            {
+                diagnosticResults += $"\n✅ User properly identified: {currentUserId}\n";
+                diagnosticResults += "   Chat history should be properly isolated.\n";
+            }
+        }
+        catch (Exception ex)
+        {
+            diagnosticResults = $"❌ User isolation test failed: {ex.Message}";
         }
         StateHasChanged();
     }
