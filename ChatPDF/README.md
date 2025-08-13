@@ -8,6 +8,10 @@ ChatPDF is a modern web application that allows users to upload PDF documents an
 ![.NET 9](https://img.shields.io/badge/.NET-9-512BD4?style=for-the-badge&logo=dotnet)
 ![AI Powered](https://img.shields.io/badge/AI-Powered-00D4AA?style=for-the-badge&logo=openai)
 
+## 📚 **[Complete Tutorial for .NET Developers](../AI-RAG-Tutorial-for-NET-Developers.md)**
+
+**New to AI and RAG?** Check out our comprehensive tutorial: **"Building AI-Powered Document Chat with RAG in .NET"** - a complete guide designed specifically for .NET developers who want to learn about AI integration, local LLMs, and Retrieval-Augmented Generation.
+
 ---
 
 ## 🚀 Features
@@ -22,17 +26,23 @@ ChatPDF is a modern web application that allows users to upload PDF documents an
 - **Contextual Responses**: AI provides accurate answers based on document content
 - **Source Citations**: Each response includes citations with exact page references
 - **Function Calling**: AI automatically searches relevant document sections
+- **Streaming Responses**: Real-time response generation with live updates
+- **Chat History**: Persistent conversation history per user
 
 ### 🎨 **Modern UI/UX**
 - **Glassmorphism Design**: Beautiful modern interface with gradient backgrounds
 - **Responsive Layout**: Optimized for desktop and mobile devices
 - **Theme Ready**: Professional color scheme with purple/blue gradients
 - **Interactive Elements**: Smooth animations and hover effects
+- **File Upload**: Drag-and-drop PDF upload with progress indicators
+- **Document Viewer**: Integrated PDF viewer for document references
 
 ### 🔧 **System Diagnostics**
 - **Health Monitoring**: Built-in diagnostics page to test all system components
 - **Component Testing**: Individual tests for documents, embeddings, search, and chat
 - **Error Identification**: Detailed error reporting for troubleshooting
+- **OpenTelemetry**: Distributed tracing and observability support
+- **Aspire Dashboard**: Integrated monitoring and metrics visualization
 
 ---
 
@@ -70,6 +80,8 @@ graph TB
 - **Microsoft.Extensions.AI**: Unified AI framework for .NET applications
 - **Function Calling**: Automatic tool invocation for document search
 - **Chat Client**: Seamless integration with language models
+- **Streaming Support**: Real-time response generation
+- **OpenTelemetry Integration**: Built-in observability and telemetry
 
 #### **Data Processing Pipeline**
 - **PDF Ingestion**: Automatic document processing and text extraction
@@ -79,6 +91,8 @@ graph TB
 #### **Storage Layer**
 - **File System**: PDF document storage in organized directory structure
 - **Vector Database**: High-performance similarity search with Qdrant
+- **Chat History**: JSON-based conversation persistence
+- **Authentication**: OpenID Connect integration with identity providers
 
 ---
 
@@ -330,6 +344,9 @@ ChatPDF/
 - **File Validation**: Strict PDF file type and size checking
 - **Input Sanitization**: Protection against prompt injection attacks
 - **Access Control**: File system permissions and validation
+- **Authentication**: OpenID Connect with configurable identity providers
+- **HTTPS Enforcement**: SSL/TLS encryption for all communications
+- **Content Security**: Trusted content ingestion with validation
 
 ---
 
@@ -364,6 +381,7 @@ For questions, issues, or contributions:
 - **Issues**: Open a GitHub issue
 - **Discussions**: Use GitHub Discussions
 - **Documentation**: Check `/diagnostics` for system health
+- **Tutorial**: See the [complete tutorial](../AI-RAG-Tutorial-for-NET-Developers.md) for detailed guidance
 
 ---
 
