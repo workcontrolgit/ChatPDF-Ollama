@@ -10,28 +10,57 @@
 @inject DocumentService DocumentService
 @implements IDisposable
 
-<PageTitle>Chat</PageTitle>
+<PageTitle>Chat - ChatPDF</PageTitle>
 
-<ChatHeader OnNewChat="@ResetConversationAsync" OnDocumentUploaded="@OnDocumentUploadedAsync" />
+<div class="max-w-4xl mx-auto">
+    @if (messages.Count > 1) 
+    {
+        <div class="flex justify-end mb-4">
+            <button class="btn btn-secondary" @onclick="ResetConversationAsync">
+                <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" style="width: 16px; height: 16px; margin-right: 8px;">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+                </svg>
+                New Chat
+            </button>
+        </div>
+    }
+    <!-- Main Chat Area -->
+    <div class="bg-white rounded-2xl shadow-sm border border-gray-200 min-h-[700px] flex flex-col">
+        <ChatMessageList Messages="@messages" InProgressMessage="@currentResponseMessage">
+            <NoMessagesContent>
+                <div class="flex-1 flex flex-col items-center justify-center p-8 text-center">
+                    @if (availableDocuments.Any())
+                    {
+                        <div class="max-w-lg space-y-6">
+                            <div class="text-center">
+                                <h2 class="text-2xl font-bold text-gray-900 mb-3">Ready to chat!</h2>
+                                <p class="text-gray-600 mb-6">
+                                    You have <span class="font-semibold text-primary-600">@availableDocuments.Count</span> document@(availableDocuments.Count == 1 ? "" : "s") available. 
+                                    Ask me anything about your PDFs.
+                                </p>
+                            </div>
+                            
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="max-w-md space-y-6">
+                            <div class="text-center">
+                                <h2 class="text-2xl font-bold text-gray-900 mb-3">Welcome to ChatPDF</h2>
+                                <p class="text-gray-600 mb-6">Upload PDF documents to start having intelligent conversations with your files.</p>
+                            </div>
+                        </div>
+                    }
+                </div>
+            </NoMessagesContent>
+        </ChatMessageList>
 
-<ChatMessageList Messages="@messages" InProgressMessage="@currentResponseMessage">
-    <NoMessagesContent>
-        @if (availableDocuments.Any())
-        {
-            <div>To get started, try asking about these documents:</div>
-            <DocumentList Documents="@availableDocuments" OnDocumentDeleted="@OnDocumentDeletedAsync" />
-        }
-        else
-        {
-            <div>No documents available. Upload a PDF to get started.</div>
-        }
-    </NoMessagesContent>
-</ChatMessageList>
-
-<div class="chat-container">
-    <ChatSuggestions OnSelected="@AddUserMessageAsync" @ref="@chatSuggestions" />
-    <ChatInput OnSend="@AddUserMessageAsync" @ref="@chatInput" />
-    <SurveyPrompt /> @* Remove this line to eliminate the template survey message *@
+        <!-- Chat Input Area -->
+        <div class="border-t border-gray-200 p-4 space-y-4">
+            <ChatSuggestions OnSelected="@AddUserMessageAsync" @ref="@chatSuggestions" />
+            <ChatInput OnSend="@AddUserMessageAsync" @ref="@chatInput" />
+        </div>
+    </div>
 </div>
 
 @code {
@@ -111,18 +140,10 @@
         await chatInput!.FocusAsync();
     }
 
-    private async Task OnDocumentUploadedAsync()
+    private void ShowNewChatOptions()
     {
-        // Refresh the document list and UI to reflect new document availability
-        LoadAvailableDocuments();
-        await InvokeAsync(StateHasChanged);
-    }
-
-    private async Task OnDocumentDeletedAsync()
-    {
-        // Refresh the document list and UI to reflect document deletion
-        LoadAvailableDocuments();
-        await InvokeAsync(StateHasChanged);
+        // This could be enhanced to show recent chats or templates in the future
+        _ = ResetConversationAsync();
     }
 
     private void LoadAvailableDocuments()

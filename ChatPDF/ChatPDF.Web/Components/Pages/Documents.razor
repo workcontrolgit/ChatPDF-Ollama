@@ -1,0 +1,524 @@
+@page "/documents"
+@using ChatPDF.Web.Services
+@using ChatPDF.Web.Services.Ingestion
+@using ChatPDF.Web.Configuration
+@using ChatPDF.Web.Components.Pages.Chat
+@using Microsoft.Extensions.Options
+@inject DocumentService DocumentService
+@inject DataIngestor DataIngestor
+@inject IWebHostEnvironment Environment
+@inject IOptions<ApplicationConfiguration> AppConfig
+@inject IJSRuntime JS
+
+<PageTitle>Documents - ChatPDF</PageTitle>
+
+<div class="max-w-7xl mx-auto space-y-6">
+    <!-- Header -->
+    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div>
+                <h1 class="text-2xl font-bold text-gray-900">Document Management</h1>
+                <p class="text-gray-600 mt-1">Upload, manage, and organize your PDF documents</p>
+            </div>
+            <div class="flex gap-3">
+                @if (selectedDocuments.Any())
+                {
+                    <button class="btn btn-danger" @onclick="DeleteSelectedDocuments">
+                        <svg style="width: 16px; height: 16px;" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                        </svg>
+                        Delete Selected (@selectedDocuments.Count)
+                    </button>
+                }
+                <button class="btn btn-primary" @onclick="ShowUploadModal">
+                    <svg style="width: 16px; height: 16px;" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+                    </svg>
+                    Upload Document
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Search and Filters -->
+    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-4">
+        <div style="display: flex; gap: 16px; align-items: center;">
+            <div style="flex: 1;">
+                <input type="text" 
+                       placeholder="Search documents..." 
+                       style="width: 100%; padding: 8px 12px; border: 1px solid #d1d5db; border-radius: 6px; font-size: 14px;"
+                       @bind="searchQuery" 
+                       @oninput="OnSearchInput" />
+            </div>
+            <div style="display: flex; gap: 8px; align-items: center;">
+                <select style="padding: 8px 12px; border: 1px solid #d1d5db; border-radius: 6px; font-size: 14px; background: white;" @bind="sortBy" @bind:after="LoadDocuments">
+                    <option value="name">Sort by Name</option>
+                    <option value="date">Sort by Date</option>
+                    <option value="size">Sort by Size</option>
+                </select>
+                <button style="display: flex; align-items: center; gap: 6px; padding: 8px 12px; background: #f3f4f6; border: 1px solid #d1d5db; border-radius: 6px; color: #374151; font-size: 14px; cursor: pointer;" @onclick="RefreshDocuments">
+                    <svg style="width: 16px; height: 16px;" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                    </svg>
+                    Refresh
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Documents Grid/Table -->
+    <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+        @if (isLoading)
+        {
+            <div class="flex items-center justify-center p-12">
+                <svg class="w-8 h-8 text-primary-600 animate-spin" fill="none" viewBox="0 0 24 24">
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+                <span class="ml-3 text-gray-600">Loading documents...</span>
+            </div>
+        }
+        else if (!filteredDocuments.Any())
+        {
+            <div class="text-center py-12">
+                <svg class="mx-auto h-16 w-16 text-gray-400 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                </svg>
+                <h3 class="text-lg font-medium text-gray-900 mb-2">No documents found</h3>
+                <p class="text-gray-500 mb-6">
+                    @if (string.IsNullOrEmpty(searchQuery))
+                    {
+                        <text>Get started by uploading your first PDF document.</text>
+                    }
+                    else
+                    {
+                        <text>No documents match your search criteria.</text>
+                    }
+                </p>
+                <button class="btn btn-primary" @onclick="ShowUploadModal">
+                    Upload your first document
+                </button>
+            </div>
+        }
+        else
+        {
+            <!-- Documents Table -->
+            <div class="overflow-hidden">
+                <table class="min-w-full divide-y divide-gray-200">
+                    <thead style="background-color: #f9fafb;">
+                        <tr>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider" style="width: 50px;">
+                                <input type="checkbox" 
+                                       @onchange="ToggleSelectAll" 
+                                       checked="@allSelected" />
+                            </th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                Document Name
+                            </th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                Size
+                            </th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                Last Modified
+                            </th>
+                        </tr>
+                    </thead>
+                    <tbody style="background-color: white;" class="divide-y divide-gray-200">
+                        @foreach (var doc in filteredDocuments)
+                        {
+                            <tr style="@(selectedDocuments.Contains(doc.Name) ? "background-color: #eff6ff;" : "")" class="hover:bg-gray-50">
+                                <td class="px-6 py-4 whitespace-nowrap" style="width: 50px;">
+                                    <input type="checkbox" 
+                                           @onchange="(e) => ToggleDocumentSelection(doc.Name, (bool)e.Value!)" 
+                                           checked="@selectedDocuments.Contains(doc.Name)" />
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <div style="font-weight: 500; color: #111827;">@doc.Name</div>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                    @FormatFileSize(doc.Size)
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                    @doc.LastModified.ToString("MMM dd, yyyy 'at' HH:mm")
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+    </div>
+
+    <!-- Upload Modal -->
+    @if (showUploadModal)
+    {
+        <div class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50" @onclick="CloseUploadModal">
+            <div class="bg-white rounded-xl shadow-xl max-w-lg w-full" @onclick:stopPropagation="true">
+                <div class="p-6">
+                    <div class="flex items-center justify-between mb-4">
+                        <h2 class="text-lg font-semibold text-gray-900">Upload Documents</h2>
+                        <button class="btn-ghost text-gray-400 p-1" @onclick="CloseUploadModal">
+                            <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                            </svg>
+                        </button>
+                    </div>
+                    
+                    <!-- Upload Form -->
+                    <div class="space-y-4">
+                        <div>
+                            <label for="file-upload" class="btn btn-primary cursor-pointer">
+                                <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" style="width: 16px; height: 16px; margin-right: 8px;">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+                                </svg>
+                                Choose PDF File
+                            </label>
+                            <InputFile id="file-upload" OnChange="OnFileSelected" accept=".pdf" style="display: none;" />
+                        </div>
+                        
+                        @if (isUploading)
+                        {
+                            <div style="display: flex; align-items: center; gap: 12px; padding: 12px; background: #dbeafe; border: 1px solid #bfdbfe; border-radius: 8px;">
+                                <svg style="width: 20px; height: 20px; color: #2563eb; animation: spin 1s linear infinite;" fill="none" viewBox="0 0 24 24">
+                                    <circle style="opacity: 0.25;" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                    <path style="opacity: 0.75;" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                </svg>
+                                <span style="color: #1d4ed8; font-weight: 500;">Uploading and processing...</span>
+                            </div>
+                        }
+                        else if (!string.IsNullOrEmpty(uploadMessage))
+                        {
+                            <div style="display: flex; align-items: center; gap: 12px; padding: 12px; border-radius: 8px; @(uploadSuccess ? "background: #dcfce7; border: 1px solid #bbf7d0;" : "background: #fef2f2; border: 1px solid #fecaca;")">
+                                @if (uploadSuccess)
+                                {
+                                    <svg style="width: 20px; height: 20px; color: #059669;" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                                    </svg>
+                                    <span style="color: #047857; font-weight: 500;">@uploadMessage</span>
+                                }
+                                else
+                                {
+                                    <svg style="width: 20px; height: 20px; color: #dc2626;" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                    </svg>
+                                    <span style="color: #dc2626; font-weight: 500;">@uploadMessage</span>
+                                }
+                            </div>
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+
+    <!-- Status Messages -->
+    @if (!string.IsNullOrEmpty(statusMessage))
+    {
+        <div class="fixed bottom-4 right-4 z-40">
+            <div class="flex items-center gap-3 p-4 rounded-lg shadow-lg animate-slide-up @(statusSuccess ? "bg-green-50 border border-green-200" : "bg-red-50 border border-red-200")">
+                @if (statusSuccess)
+                {
+                    <svg class="w-5 h-5 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                    </svg>
+                    <span class="text-green-700 font-medium">@statusMessage</span>
+                }
+                else
+                {
+                    <svg class="w-5 h-5 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    <span class="text-red-700 font-medium">@statusMessage</span>
+                }
+            </div>
+        </div>
+    }
+</div>
+
+@code {
+    private List<DocumentInfo> documents = new();
+    private List<DocumentInfo> filteredDocuments = new();
+    private HashSet<string> selectedDocuments = new();
+    private bool isLoading = true;
+    private string searchQuery = "";
+    private string sortBy = "name";
+    private bool showUploadModal = false;
+    private string statusMessage = "";
+    private bool statusSuccess = false;
+    private bool allSelected = false;
+    
+    // Upload related variables
+    private bool isUploading = false;
+    private string uploadMessage = "";
+    private bool uploadSuccess = false;
+
+    public class DocumentInfo
+    {
+        public string Name { get; set; } = "";
+        public long Size { get; set; }
+        public DateTime LastModified { get; set; }
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadDocuments();
+    }
+
+    private async Task LoadDocuments()
+    {
+        isLoading = true;
+        StateHasChanged();
+
+        try
+        {
+            var documentNames = DocumentService.GetAvailableDocuments();
+            var dataPath = Path.Combine(Environment.WebRootPath, AppConfig.Value.DataIngestion.PdfDirectory);
+            
+            documents = documentNames.Select(name =>
+            {
+                var filePath = Path.Combine(dataPath, name);
+                var fileInfo = new FileInfo(filePath);
+                return new DocumentInfo
+                {
+                    Name = name,
+                    Size = fileInfo.Exists ? fileInfo.Length : 0,
+                    LastModified = fileInfo.Exists ? fileInfo.LastWriteTime : DateTime.MinValue
+                };
+            }).ToList();
+
+            ApplyFiltersAndSort();
+        }
+        finally
+        {
+            isLoading = false;
+            StateHasChanged();
+        }
+    }
+
+    private void ApplyFiltersAndSort()
+    {
+        var query = documents.AsEnumerable();
+
+        // Apply search filter
+        if (!string.IsNullOrEmpty(searchQuery))
+        {
+            query = query.Where(d => 
+                d.Name.Contains(searchQuery, StringComparison.OrdinalIgnoreCase));
+        }
+
+        // Apply sorting
+        query = sortBy switch
+        {
+            "date" => query.OrderByDescending(d => d.LastModified),
+            "size" => query.OrderByDescending(d => d.Size),
+            _ => query.OrderBy(d => d.Name)
+        };
+
+        filteredDocuments = query.ToList();
+        UpdateSelectAllState();
+    }
+
+    private void OnSearchInput(ChangeEventArgs e)
+    {
+        searchQuery = e.Value?.ToString() ?? "";
+        ApplyFiltersAndSort();
+        StateHasChanged();
+    }
+
+    private async Task RefreshDocuments()
+    {
+        selectedDocuments.Clear();
+        await LoadDocuments();
+    }
+
+    private void ShowUploadModal()
+    {
+        showUploadModal = true;
+    }
+
+    private void CloseUploadModal()
+    {
+        showUploadModal = false;
+    }
+
+    private async Task OnDocumentUploaded()
+    {
+        showUploadModal = false;
+        await LoadDocuments();
+        ShowStatusMessage("Document uploaded successfully!", true);
+    }
+
+    private async Task OnFileSelected(InputFileChangeEventArgs e)
+    {
+        var file = e.File;
+        if (file == null)
+            return;
+
+        // Validate file type
+        if (!file.Name.EndsWith(".pdf", StringComparison.OrdinalIgnoreCase))
+        {
+            ShowUploadMessage("Only PDF files are allowed.", false);
+            return;
+        }
+
+        // Validate file size using configuration
+        var maxSizeBytes = AppConfig.Value.DataIngestion.MaxFileSizeMB * 1024 * 1024;
+        if (file.Size > maxSizeBytes)
+        {
+            ShowUploadMessage($"File size must be less than {AppConfig.Value.DataIngestion.MaxFileSizeMB}MB.", false);
+            return;
+        }
+
+        isUploading = true;
+        uploadMessage = "";
+        StateHasChanged();
+
+        try
+        {
+            // Create the Data directory if it doesn't exist (using configuration)
+            var dataPath = Path.Combine(Environment.WebRootPath, AppConfig.Value.DataIngestion.PdfDirectory);
+            Directory.CreateDirectory(dataPath);
+
+            // Generate unique filename to avoid conflicts
+            var fileName = Path.GetFileNameWithoutExtension(file.Name);
+            var extension = Path.GetExtension(file.Name);
+            var uniqueFileName = $"{fileName}_{DateTime.Now:yyyyMMdd_HHmmss}{extension}";
+            var filePath = Path.Combine(dataPath, uniqueFileName);
+
+            // Save the file (using configuration for max size)
+            using (var stream = file.OpenReadStream(maxAllowedSize: maxSizeBytes))
+            using (var fileStream = new FileStream(filePath, FileMode.Create))
+            {
+                await stream.CopyToAsync(fileStream);
+            }
+
+            // Ingest the new document
+            var source = new PDFDirectorySource(dataPath);
+            await DataIngestor.IngestDataAsync(source);
+
+            ShowUploadMessage($"'{file.Name}' uploaded and indexed successfully!", true);
+            await OnDocumentUploaded();
+        }
+        catch (Exception ex)
+        {
+            ShowUploadMessage($"Upload failed: {ex.Message}", false);
+        }
+        finally
+        {
+            isUploading = false;
+            StateHasChanged();
+        }
+    }
+
+    private void ShowUploadMessage(string message, bool success)
+    {
+        uploadMessage = message;
+        uploadSuccess = success;
+        StateHasChanged();
+
+        // Clear message after 5 seconds
+        _ = Task.Delay(5000).ContinueWith(_ =>
+        {
+            InvokeAsync(() =>
+            {
+                uploadMessage = "";
+                StateHasChanged();
+            });
+        });
+    }
+
+    private void ToggleDocumentSelection(string documentName, bool selected)
+    {
+        if (selected)
+            selectedDocuments.Add(documentName);
+        else
+            selectedDocuments.Remove(documentName);
+        
+        UpdateSelectAllState();
+        StateHasChanged();
+    }
+
+    private void ToggleSelectAll(ChangeEventArgs e)
+    {
+        var selectAll = (bool)e.Value!;
+        selectedDocuments.Clear();
+        
+        if (selectAll)
+        {
+            selectedDocuments.UnionWith(filteredDocuments.Select(d => d.Name));
+        }
+        
+        allSelected = selectAll;
+        StateHasChanged();
+    }
+
+    private void UpdateSelectAllState()
+    {
+        allSelected = filteredDocuments.Any() && 
+                     filteredDocuments.All(d => selectedDocuments.Contains(d.Name));
+    }
+
+
+    private async Task DeleteSelectedDocuments()
+    {
+        if (!selectedDocuments.Any()) return;
+
+        var confirmed = await JS.InvokeAsync<bool>("confirm", 
+            $"Are you sure you want to delete {selectedDocuments.Count} selected documents? This action cannot be undone.");
+        
+        if (confirmed)
+        {
+            var deleteCount = 0;
+            var selectedList = selectedDocuments.ToList();
+            
+            foreach (var fileName in selectedList)
+            {
+                var success = await DocumentService.DeleteDocumentAsync(fileName);
+                if (success) deleteCount++;
+            }
+            
+            selectedDocuments.Clear();
+            await LoadDocuments();
+            
+            if (deleteCount == selectedList.Count)
+            {
+                ShowStatusMessage($"{deleteCount} documents deleted successfully!", true);
+            }
+            else
+            {
+                ShowStatusMessage($"{deleteCount} of {selectedList.Count} documents deleted.", false);
+            }
+        }
+    }
+
+
+    private void ShowStatusMessage(string message, bool success)
+    {
+        statusMessage = message;
+        statusSuccess = success;
+        StateHasChanged();
+
+        _ = Task.Delay(5000).ContinueWith(_ =>
+        {
+            InvokeAsync(() =>
+            {
+                statusMessage = "";
+                StateHasChanged();
+            });
+        });
+    }
+
+
+    private string FormatFileSize(long bytes)
+    {
+        string[] sizes = { "B", "KB", "MB", "GB" };
+        double len = bytes;
+        int order = 0;
+        while (len >= 1024 && order < sizes.Length - 1)
+        {
+            order++;
+            len = len / 1024;
+        }
+        return $"{len:0.##} {sizes[order]}";
+    }
+}
